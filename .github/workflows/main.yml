@@ -45,6 +45,7 @@ jobs:
             -scheme VXTube \
             -jobs 1 \
             -configuration Release \
+            SWIFT_OPTIMIZATION_LEVEL=-Osize \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
             -derivedDataPath build/DerivedData \
