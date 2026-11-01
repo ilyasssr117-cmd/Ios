@@ -295,7 +295,9 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         for anchor in try document.select("a.grid-item[href], #albumGallery .item a[href], .album-view .item a[href], .photo-holder .item a[href]").array() {
             guard let href = try? anchor.attr("href"), let full = absolute(href, relativeTo: url),
                   let image = try? anchor.select("img").first() else { continue }
-            let thumbRaw = (try? image.attr("data-src")) ?? (try? image.attr("src")) ?? ""
+            let dataSrc = (try? image.attr("data-src")) ?? ""
+            let plainSrc = (try? image.attr("src")) ?? ""
+            let thumbRaw = dataSrc.isEmpty ? plainSrc : dataSrc
             let thumb = absolute(thumbRaw, relativeTo: url) ?? full
             let path = full.path.isEmpty ? full.absoluteString : full.path
             let id = firstMatch(#"/sources/(.+?)/?$"#, in: path) ?? path
@@ -443,18 +445,12 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
 
         let image = try card.select(config.imageSelector).first()
         var imageRaw = ""
-        if let value = try? image.attr("data-src"), !value.isEmpty {
-            imageRaw = value
-        } else if let value = try? image.attr("data-original"), !value.isEmpty {
-            imageRaw = value
-        } else if let value = try? image.attr("data-webp"), !value.isEmpty {
-            imageRaw = value
-        } else if let value = try? image.attr("data-lazy-src"), !value.isEmpty {
-            imageRaw = value
-        } else if let value = try? image.attr("src"), !value.isEmpty {
-            imageRaw = value
-        } else if let poster = try? card.select("video[poster]").first().attr("poster") {
-            imageRaw = poster
+        for name in ["data-src", "data-original", "data-webp", "data-lazy-src", "src"] {
+            let value: String = (try? image?.attr(name)) ?? ""
+            if !value.isEmpty { imageRaw = value; break }
+        }
+        if imageRaw.isEmpty {
+            imageRaw = (try? card.select("video[poster]").first()?.attr("poster")) ?? ""
         }
         let thumbnail = absolute(imageRaw, relativeTo: pageURL)
         let anchorText = cleanText((try? anchor?.text()) ?? "")
@@ -512,10 +508,10 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         let date = iconParentText(in: card, selector: config.dateIconSelector)
 
         let dataID = ((try? card.attr("data-id")) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        let pageQuery = videoPage.query ?? ""
-        let pageQuerySuffix = pageQuery.isEmpty ? "" : "?\(pageQuery)"
-        let fallbackID = "\(videoPage.host ?? "")\(videoPage.path)\(pageQuerySuffix)"
-        let id = dataID.isEmpty ? fallbackID : dataID
+        var queryPart = ""
+        if let query = videoPage.query, !query.isEmpty { queryPart = "?" + query }
+        let pageKey: String = (videoPage.host ?? "") + videoPage.path + queryPart
+        let id = dataID.isEmpty ? pageKey : dataID
         let directCandidates = [
             (try? card.attr("data-video-url")) ?? "",
             (try? card.attr("data-stream")) ?? "",
@@ -722,7 +718,7 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
                 values.append(cleanText(value))
             }
         }
-        if let parent = node.parent(), let text = try? parent.text(), !cleanText(text).isEmpty {
+        if let parent = try? node.parent(), let text = try? parent.text(), !cleanText(text).isEmpty {
             values.append(cleanText(text))
         }
         return cleanText(values.joined(separator: " "))
@@ -732,7 +728,7 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         guard !selector.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               let selected = try? element.select(selector),
               let icon = selected.first() else { return "" }
-        if let parent = icon.parent(),
+        if let parent = try? icon.parent(),
            let text = try? parent.text(), !cleanText(text).isEmpty {
             return cleanText(text)
         }
