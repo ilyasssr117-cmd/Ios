@@ -44,7 +44,6 @@ jobs:
             -project VXTube.xcodeproj \
             -scheme VXTube \
             -jobs 1 \
-            -parallelizeTargets NO \
             -configuration Release \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
