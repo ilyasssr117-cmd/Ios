@@ -214,7 +214,7 @@ struct CategoryBar: View {
                             .padding(.horizontal, 14).padding(.vertical, 7)
                             .background {
                                 Capsule(style: .continuous)
-                                    .fill(isSelected ? AnyShapeStyle(Color.vxAccent) : AnyShapeStyle(.ultraThinMaterial))
+                                    .fill(isSelected ? AnyShapeStyle(Color.vxSocialGradient) : AnyShapeStyle(.thinMaterial))
                             }
                             .overlay(Capsule(style: .continuous)
                                 .strokeBorder(Color.primary.opacity(isSelected ? 0.04 : 0.08), lineWidth: 0.8))
