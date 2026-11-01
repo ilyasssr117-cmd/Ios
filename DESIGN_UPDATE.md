@@ -1,4 +1,4 @@
-# VXTube — Social Modernization and Playback Fixes
+# VXTube — iOS 27 Inspired Visual Refresh
 
 ## UI / UX
 - Updated card and metadata hierarchy toward modern social-video interfaces: cleaner thumbnails, concise metadata, rounded surfaces and a vivid indigo/blue-violet accent.
@@ -20,3 +20,11 @@
 - `bash scripts/verify-swift-syntax.sh` passes.
 - Regex normalization was smoke-tested locally for K/M suffixes, comma counts and non-breaking spaces.
 - Xcode/iOS SDK is unavailable in this workspace. The GitHub Actions job runs the real Xcode build; runtime video playback still needs a real-device test against the live source.
+
+
+## Liquid Glass visual refresh
+- Reduced the featured artwork height so more of the feed is visible without scrolling.
+- Added a translucent, high-contrast detail surface over the featured artwork so titles and actions stay readable across bright thumbnails and both system appearances.
+- Refined the feature title typography, category selection gradient and continuous card corners to create a consistent iOS 27-inspired visual language while keeping the app's iOS 18 deployment target.
+- Kept playback, routing, accessibility actions and the existing theme setting intact.
+- The GitHub Actions workflow packages the unsigned Release build as `artifacts/VXTube.ipa`; signing is still needed for direct device installation.
