@@ -1,4 +1,4 @@
-import Foundation
+import SwiftUI
 import Observation
 
 /// Owns everything `_HomePageState` kept in fields: paging, category,
