@@ -76,8 +76,8 @@ final class AppRouter {
 
 /// Keeps the original Flutter information architecture:
 /// - Home, Library and Settings are horizontally swipeable root sections.
-/// - Search and Reels are full-screen destinations opened from the glass dock.
-/// - The floating dock can be tapped or scrubbed horizontally to change tabs.
+/// - Search is presented as a large draggable sheet; Reels remains an immersive full-screen destination.
+/// - The compact floating glass bar uses native-feeling selection indicators and haptics.
 /// Native TabView paging replaces the manually animated Flutter section stack.
 struct HomeView: View {
     @State private var vm: HomeViewModel
@@ -111,7 +111,7 @@ struct HomeView: View {
             .background(Color(.systemBackground))
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 // Keeps scroll content clear of the floating glass dock.
-                Color.clear.frame(height: 94).accessibilityHidden(true)
+                Color.clear.frame(height: 78).accessibilityHidden(true)
             }
             .overlay(alignment: .bottom) {
                 GlassTabBar(selection: $router.selection, onSelect: { tab in
@@ -133,7 +133,7 @@ struct HomeView: View {
                                  onPlay: { vm.playerRoute = $0 })
             }
         }
-        .fullScreenCover(isPresented: $router.isSearchPresented, onDismiss: {
+        .sheet(isPresented: $router.isSearchPresented, onDismiss: {
             router.restoreDockSelection()
         }) {
             NavigationStack {
@@ -143,6 +143,10 @@ struct HomeView: View {
                 .toolbar(.hidden, for: .navigationBar)
             }
             .tint(.vxAccent)
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(32)
+            .presentationContentInteraction(.scrolls)
         }
         .fullScreenCover(isPresented: $router.isReelsPresented, onDismiss: {
             router.restoreDockSelection()
@@ -154,6 +158,10 @@ struct HomeView: View {
         .fullScreenCover(item: $vm.playerRoute) { PlayerScreen(route: $0, dependencies: deps) }
         .sheet(item: $router.selectedModel) { model in
             ModelBrowserView(model: model, dependencies: deps, onOpen: openDetails)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(32)
+                .presentationContentInteraction(.scrolls)
         }
         .overlay(alignment: .bottom) {
             if !router.isSearchPresented, !router.isReelsPresented,
@@ -213,9 +221,6 @@ private struct GlassTabBar: View {
     @Binding var selection: AppTab
     let onSelect: (AppTab) -> Void
 
-    @State private var scrubbedTab: AppTab?
-    @State private var isScrubbing = false
-
     private struct Item: Identifiable {
         let tab: AppTab
         let title: String
@@ -224,114 +229,57 @@ private struct GlassTabBar: View {
     }
 
     private let items: [Item] = [
-        Item(tab: .home, title: "Home", symbol: "house.fill"),
+        Item(tab: .home, title: "Home", symbol: "house"),
         Item(tab: .search, title: "Search", symbol: "magnifyingglass"),
-        Item(tab: .reels, title: "Reels", symbol: "play.rectangle.on.rectangle.fill"),
-        Item(tab: .library, title: "Library", symbol: "books.vertical.fill"),
+        Item(tab: .reels, title: "Reels", symbol: "play.rectangle"),
+        Item(tab: .library, title: "Library", symbol: "square.stack"),
         Item(tab: .settings, title: "Settings", symbol: "slider.horizontal.3")
     ]
 
-    private var highlightedTab: AppTab { scrubbedTab ?? selection }
-
     var body: some View {
-        GeometryReader { geometry in
-            let contentWidth = max(geometry.size.width - 12, 0)
-            let itemWidth = contentWidth / CGFloat(items.count)
-            let selectedIndex = CGFloat(items.firstIndex(where: { $0.tab == highlightedTab }) ?? 0)
-
-            ZStack(alignment: .leading) {
-                Capsule(style: .continuous)
-                    .fill(.ultraThinMaterial)
-
-                Capsule(style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.vxAccent.opacity(0.23), Color.vxAccent.opacity(0.10)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .overlay {
-                        Capsule(style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.22), lineWidth: 0.8)
+        HStack(spacing: 0) {
+            ForEach(items) { item in
+                let active = selection == item.tab
+                Button {
+                    Haptics.play(.selection)
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
+                        selection = item.tab
                     }
-                    .frame(width: max(0, itemWidth - 8), height: 58)
-                    .offset(x: selectedIndex * itemWidth + 4)
-                    .animation(isScrubbing ? nil : .spring(response: 0.34, dampingFraction: 0.76),
-                               value: highlightedTab)
-
-                HStack(spacing: 0) {
-                    ForEach(items) { item in
-                        let active = highlightedTab == item.tab
-                        Button {
-                            Haptics.play(.selection)
-                            withAnimation(.spring(response: 0.34, dampingFraction: 0.78)) {
-                                selection = item.tab
-                                scrubbedTab = nil
-                                isScrubbing = false
-                            }
-                            onSelect(item.tab)
-                        } label: {
-                            VStack(spacing: 4) {
-                                Image(systemName: item.symbol)
-                                    .font(.system(size: 18, weight: active ? .semibold : .regular))
-                                    .symbolRenderingMode(.hierarchical)
-                                    .scaleEffect(active ? 1.08 : 1)
-                                    .frame(height: 21)
-                                Text(item.title)
-                                    .font(active ? .caption2.weight(.bold) : .caption2.weight(.medium))
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.8)
-                            }
+                    onSelect(item.tab)
+                } label: {
+                    VStack(spacing: 3) {
+                        Image(systemName: item.symbol)
+                            .font(.system(size: 18, weight: active ? .semibold : .regular))
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(active ? Color.vxAccent : Color.secondary)
+                            .frame(height: 22)
+                        Circle()
+                            .fill(active ? Color.vxAccent : Color.clear)
+                            .frame(width: 4, height: 4)
+                        Text(item.title)
+                            .font(.system(size: 10, weight: active ? .semibold : .medium))
                             .foregroundStyle(active ? Color.primary : Color.secondary)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 58)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(item.title)
-                        .accessibilityAddTraits(active ? .isSelected : [])
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 58)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel(item.title)
+                .accessibilityAddTraits(active ? .isSelected : [])
             }
-            .padding(6)
-            .background(.ultraThinMaterial, in: Capsule(style: .continuous))
-            .overlay {
-                Capsule(style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.28), lineWidth: 0.9)
-            }
-            .shadow(color: Color.black.opacity(0.15), radius: 22, x: 0, y: 9)
-            .shadow(color: Color.vxAccent.opacity(0.08), radius: 18, x: 0, y: 2)
-            .contentShape(Capsule())
-            .highPriorityGesture(
-                DragGesture(minimumDistance: 10)
-                    .onChanged { value in
-                        guard abs(value.translation.width) > 8 else { return }
-                        let clampedX = min(max(value.location.x - 6, 0), contentWidth)
-                        let index = min(max(Int(clampedX / max(itemWidth, 1)), 0), items.count - 1)
-                        let target = items[index].tab
-                        if target != highlightedTab {
-                            Haptics.play(.selection)
-                        }
-                        isScrubbing = true
-                        scrubbedTab = target
-                    }
-                    .onEnded { value in
-                        guard isScrubbing else { return }
-                        let clampedX = min(max(value.location.x - 6, 0), contentWidth)
-                        let index = min(max(Int(clampedX / max(itemWidth, 1)), 0), items.count - 1)
-                        let target = items[index].tab
-                        withAnimation(.spring(response: 0.36, dampingFraction: 0.78)) {
-                            selection = target
-                            scrubbedTab = nil
-                            isScrubbing = false
-                        }
-                        Haptics.play(.medium)
-                        onSelect(target)
-                    }
-            )
         }
-        .frame(height: 70)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 27, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 27, style: .continuous)
+                .strokeBorder(.white.opacity(0.12), lineWidth: 0.7)
+        }
+        .shadow(color: .black.opacity(0.12), radius: 20, x: 0, y: 8)
+        .frame(height: 68)
         .accessibilityElement(children: .contain)
     }
 }
