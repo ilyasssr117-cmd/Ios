@@ -1,0 +1,38 @@
+name: VXTube
+options:
+  bundleIdPrefix: com.flow
+  deploymentTarget:
+    iOS: "18.0"
+packages:
+  SwiftSoup:
+    url: https://github.com/scinfu/SwiftSoup
+    from: 2.7.0
+targets:
+  VXTube:
+    type: application
+    platform: iOS
+    sources:
+      - path: Swift
+    dependencies:
+      - package: SwiftSoup
+    info:
+      path: Info.plist
+      properties:
+        CFBundleDisplayName: Flow
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UIBackgroundModes: [audio]
+        NSPhotoLibraryAddUsageDescription: Allow Flow to save videos and photos to your photo library.
+        NSSupportsLiveActivities: true
+        ITSAppUsesNonExemptEncryption: false
+        CFBundleURLTypes:
+          - CFBundleURLSchemes: [watchtube]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.flow.vxtube
+        SWIFT_VERSION: "5.0"
+        MARKETING_VERSION: "1.1.0"
+        CURRENT_PROJECT_VERSION: "2"
+        CODE_SIGNING_ALLOWED: "NO"
+        CODE_SIGNING_REQUIRED: "NO"
+        CODE_SIGN_IDENTITY: ""
