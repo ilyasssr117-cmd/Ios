@@ -950,7 +950,7 @@ struct AllAlbumsCatalogView: View {
                                 VStack(alignment: .leading, spacing: 7) {
                                     HeaderImage(url: URL(string: album.thumbnailURL ?? "") ?? URL(fileURLWithPath: "/"), headers: imageHeaders(for: album.url), maxPixel: 520)
                                         .frame(maxWidth: .infinity).aspectRatio(0.82, contentMode: .fill).clipped()
-                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                                     Text(album.title).font(.subheadline.weight(.semibold)).foregroundStyle(.primary).lineLimit(2)
                                     if let model = album.modelName, !model.isEmpty { Text(model).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
                                 }.frame(maxWidth: .infinity, alignment: .leading)
@@ -1048,7 +1048,13 @@ struct ModelBrowserView: View {
             }
             .navigationTitle("Model").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
-            .sheet(item: $selectedAlbum) { album in AlbumBrowserView(album: album, dependencies: dependencies) }
+            .sheet(item: $selectedAlbum) { album in
+                AlbumBrowserView(album: album, dependencies: dependencies)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(32)
+                    .presentationContentInteraction(.scrolls)
+            }
             .task {
                 await loadVideos()
                 await loadAlbums()
@@ -1077,7 +1083,22 @@ struct ModelBrowserView: View {
 
     @ViewBuilder private var videosContent: some View {
         if videos.isEmpty && isLoadingVideos {
-            ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: 14) {
+                    ForEach(0..<6, id: .self) { _ in
+                        VStack(alignment: .leading, spacing: 8) {
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .fill(Color.secondary.opacity(0.16))
+                                .aspectRatio(16 / 9, contentMode: .fit)
+                            Text("Loading video title").font(.subheadline.weight(.semibold))
+                            Text("00:00 · 0 views").font(.caption)
+                        }
+                        .redacted(reason: .placeholder)
+                    }
+                }
+                .padding(16)
+            }
+            .accessibilityLabel("Loading model videos")
         } else if videos.isEmpty, let videoError {
             ContentUnavailableView("Couldn’t load videos", systemImage: "wifi.exclamationmark", description: Text(videoError))
                 .overlay(alignment: .bottom) { Button("Retry") { Task { await loadVideos() } }.buttonStyle(.borderedProminent).padding(.bottom, 30) }
@@ -1104,7 +1125,21 @@ struct ModelBrowserView: View {
 
     @ViewBuilder private var albumsContent: some View {
         if albums.isEmpty && isLoadingAlbums {
-            ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: 16) {
+                    ForEach(0..<6, id: .self) { _ in
+                        VStack(alignment: .leading, spacing: 8) {
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .fill(Color.secondary.opacity(0.16))
+                                .aspectRatio(0.82, contentMode: .fit)
+                            Text("Loading album title").font(.subheadline.weight(.semibold))
+                        }
+                        .redacted(reason: .placeholder)
+                    }
+                }
+                .padding(16)
+            }
+            .accessibilityLabel("Loading model albums")
         } else if albums.isEmpty, let albumError {
             ContentUnavailableView("Couldn’t load albums", systemImage: "wifi.exclamationmark", description: Text(albumError))
                 .overlay(alignment: .bottom) { Button("Retry") { Task { await loadAlbums() } }.buttonStyle(.borderedProminent).padding(.bottom, 30) }
@@ -1118,7 +1153,7 @@ struct ModelBrowserView: View {
                             VStack(alignment: .leading, spacing: 7) {
                                 HeaderImage(url: URL(string: album.thumbnailURL ?? "") ?? URL(fileURLWithPath: "/"), headers: imageHeaders(for: album.url), maxPixel: 480)
                                     .frame(maxWidth: .infinity).aspectRatio(0.82, contentMode: .fill).clipped()
-                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                                 Text(album.title).font(.subheadline.weight(.semibold)).foregroundStyle(.primary).lineLimit(2)
                             }.frame(maxWidth: .infinity, alignment: .leading)
                         }.buttonStyle(.plain)
@@ -1157,7 +1192,7 @@ struct ModelBrowserView: View {
             if result.videos.isEmpty || fresh.isEmpty { hasMoreVideos = false }
             isLoadingVideos = false
         } catch {
-            videoError = error.localizedDescription
+            videoError = describeError(error, subject: "model videos").message
             isLoadingVideos = false
         }
     }
@@ -1173,7 +1208,7 @@ struct ModelBrowserView: View {
             if result.isEmpty || fresh.isEmpty { hasMoreAlbums = false }
             isLoadingAlbums = false
         } catch {
-            albumError = error.localizedDescription
+            albumError = describeError(error, subject: "model albums").message
             isLoadingAlbums = false
         }
     }
@@ -1218,7 +1253,18 @@ struct AlbumBrowserView: View {
                 }.padding(.horizontal, 16).padding(.vertical, 10)
 
                 if photos.isEmpty && isLoading {
-                    ProgressView("Loading photos…").frame(maxWidth: .infinity, maxHeight: .infinity)
+                    ScrollView {
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 5), count: 3), spacing: 5) {
+                            ForEach(0..<9, id: \.self) { _ in
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(Color.secondary.opacity(0.16))
+                                    .aspectRatio(3 / 4, contentMode: .fit)
+                                    .redacted(reason: .placeholder)
+                            }
+                        }
+                        .padding(5)
+                    }
+                    .accessibilityLabel("Loading album photos")
                 } else if photos.isEmpty, let loadError {
                     ContentUnavailableView("Couldn’t load photos", systemImage: "wifi.exclamationmark", description: Text(loadError))
                         .overlay(alignment: .bottom) { Button("Retry") { Task { await loadNextChunk() } }.buttonStyle(.borderedProminent).padding(.bottom, 30) }
@@ -1236,7 +1282,7 @@ struct AlbumBrowserView: View {
                                     ZStack(alignment: .topTrailing) {
                                         HeaderImage(url: URL(string: photo.thumbURL) ?? URL(fileURLWithPath: "/"), headers: albumHeaders, maxPixel: 420)
                                             .frame(maxWidth: .infinity).aspectRatio(3 / 4, contentMode: .fill).clipped()
-                                            .background(Color(.secondarySystemBackground))
+                                            .background(Color.black)
                                         if selectedIDs.contains(photo.id) {
                                             Image(systemName: "checkmark.circle.fill")
                                                 .font(.title2).symbolRenderingMode(.palette)
@@ -1246,7 +1292,7 @@ struct AlbumBrowserView: View {
                                                 .font(.title3).symbolRenderingMode(.palette)
                                                 .foregroundStyle(.white, .green).padding(6)
                                         }
-                                    }.clipShape(RoundedRectangle(cornerRadius: 6))
+                                    }.clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                                 }
                                 .buttonStyle(.plain)
                                 .onLongPressGesture {
@@ -1315,7 +1361,7 @@ struct AlbumBrowserView: View {
             if chunk.isEmpty || staleChunks >= 3 || nextChunk > 400 { hasMore = false }
             isLoading = false
         } catch {
-            loadError = error.localizedDescription
+            loadError = describeError(error, subject: "album photos").message
             isLoading = false
         }
     }
@@ -1423,7 +1469,7 @@ struct OfflineAlbumBrowserView: View {
                                             if selectedIDs.contains(photo.id) {
                                                 Image(systemName: "checkmark.circle.fill").font(.title2).symbolRenderingMode(.palette).foregroundStyle(.white, Color.vxAccent).padding(6)
                                             }
-                                        }.clipShape(RoundedRectangle(cornerRadius: 6))
+                                        }.clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                                     }.buttonStyle(.plain)
                                 }
                             }.padding(5)
