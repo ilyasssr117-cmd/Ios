@@ -48,6 +48,9 @@ jobs:
             -scheme VXTube \
             -derivedDataPath build/DerivedData
 
+      - name: Install xcbeautify
+        run: brew install xcbeautify
+
       - name: Build unsigned iOS app
         run: |
           set -o pipefail
@@ -62,7 +65,19 @@ jobs:
             -skipPackagePluginValidation \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            build 2>&1 | tee build/xcodebuild.log
+            build 2>&1 | tee build/xcodebuild.log | xcbeautify --renderer github-actions
+
+      # Like `flutter analyze`: prints only the real errors and warnings
+      # of YOUR code (file:line: message), without the build noise.
+      - name: Show code errors (analyze)
+        if: failure()
+        run: |
+          echo "================ ERRORS ================"
+          grep -E "^/.*: error:" build/xcodebuild.log | sed "s|$GITHUB_WORKSPACE/||" | sort -u || true
+          echo "============== WARNINGS ================"
+          grep -E "^/.*: warning:" build/xcodebuild.log | grep -v "SourcePackages" | sed "s|$GITHUB_WORKSPACE/||" | sort -u | head -50 || true
+          echo "========== CRASH / SERVICE ERRORS ======"
+          grep -E "^error:|Command .* failed|crashed" build/xcodebuild.log | sort -u || true
 
       - name: Package IPA
         run: |
