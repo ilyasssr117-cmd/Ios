@@ -44,7 +44,7 @@ jobs:
             -project VXTube.xcodeproj \
             -scheme VXTube \
             -jobs 1 \
-            -configuration Release \
+            -configuration Debug \
             SWIFT_OPTIMIZATION_LEVEL=-Onone \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
@@ -57,7 +57,7 @@ jobs:
       - name: Package IPA
         run: |
           mkdir -p artifacts Payload
-          APP_PATH="build/DerivedData/Build/Products/Release-iphoneos/VXTube.app"
+          APP_PATH="build/DerivedData/Build/Products/Debug-iphoneos/VXTube.app"
           test -d "$APP_PATH"
           cp -R "$APP_PATH" Payload/
           zip -qry artifacts/VXTube.ipa Payload
