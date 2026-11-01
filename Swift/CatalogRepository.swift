@@ -226,47 +226,54 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
 
     func modelProfile(for model: ModelRef) async throws -> ModelProfile {
         guard let url = URL(string: model.url) else { return ModelProfile(name: model.name) }
-        let html = try await loadHTML(url)
-        let document = try SwiftSoup.parse(html, url.absoluteString)
+        let payload = try await loadHTML(url)
+        if let profile = parseJSONModelProfile(payload, fallbackName: model.name) { return profile }
+        let document = try SwiftSoup.parse(embeddedHTML(in: payload) ?? payload, url.absoluteString)
         let name = (try? document.select("meta[property=og:title]").first()?.attr("content")) ?? (try? document.select("h1").first()?.text()) ?? model.name
         let image = (try? document.select("meta[property=og:image]").first()?.attr("content")) ?? (try? document.select("meta[name=twitter:image]").first()?.attr("content"))
         return ModelProfile(name: name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? model.name : name, imageURL: absolute(image ?? "", relativeTo: url)?.absoluteString)
     }
 
     func modelPage(_ model: ModelRef, page: Int = 1) async throws -> ModelPageResult {
-        guard let base = URL(string: model.url) else { return ModelPageResult(videos: [], profile: nil) }
+        guard let base = normalizedModelURL(for: model) else { throw URLError(.badURL) }
         let path = page <= 1 ? "videos/" : "videos/\(page)/"
         let url = base.appending(path: path)
-        let list: [Video]
+        let payload: String
         do {
-            list = try await parseVideos(at: url, selector: config.cardSelector)
+            payload = try await loadHTML(url)
         } catch let error as HTTPStatusError where page > 1 && error.code == 404 {
             return ModelPageResult(videos: [], profile: nil)
         }
-        var profile: ModelProfile?
-        if page <= 1 { profile = try? await modelProfile(for: model) }
+        let decoded = parseJSONVideos(payload, baseURL: url)
+        let list = decoded.isEmpty
+            ? try await parseVideos(at: url, selector: config.cardSelector)
+            : decoded
+        let profile = page <= 1 ? (try? await modelProfile(for: model)) : nil
         return ModelPageResult(videos: list, profile: profile)
     }
 
     func albums(for model: ModelRef? = nil, page: Int = 1) async throws -> [AlbumRef] {
         let url: URL
-        if let model, let base = URL(string: model.url) {
+        if let model {
+            guard let base = normalizedModelURL(for: model) else { throw URLError(.badURL) }
             url = base.appending(path: page <= 1 ? "albums/" : "albums/\(page)/")
         } else {
             url = config.url(path: page <= 1 ? "albums/" : "albums/\(page)/")
         }
-        let html: String
+        let payload: String
         do {
-            html = try await loadHTML(url)
+            payload = try await loadHTML(url)
         } catch let error as HTTPStatusError where page > 1 && error.code == 404 {
             return []
         }
-        let document = try SwiftSoup.parse(html, url.absoluteString)
+        let decoded = parseJSONAlbums(payload, baseURL: url, modelName: model?.name)
+        if !decoded.isEmpty { return decoded }
+        let document = try SwiftSoup.parse(embeddedHTML(in: payload) ?? payload, url.absoluteString)
         return try parseAlbums(document, baseURL: url, modelName: model?.name)
     }
 
     func albumPhotos(_ album: AlbumRef, chunk: Int = 0) async throws -> [AlbumPhoto] {
-        guard let base = URL(string: album.url) else { return [] }
+        guard let base = URL(string: album.url) else { throw URLError(.badURL) }
         var url = base
         if chunk > 0, var components = URLComponents(url: base, resolvingAgainstBaseURL: false) {
             components.queryItems = (components.queryItems ?? []) + [
@@ -289,7 +296,9 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         } catch let error as HTTPStatusError where chunk > 0 && (400..<500).contains(error.code) {
             return []
         }
-        let document = try SwiftSoup.parse(html, url.absoluteString)
+        let decoded = parseJSONPhotos(html, baseURL: url)
+        if !decoded.isEmpty { return decoded }
+        let document = try SwiftSoup.parse(embeddedHTML(in: html) ?? html, url.absoluteString)
         var output: [AlbumPhoto] = []
         var seen = Set<String>()
         for anchor in try document.select("a.grid-item[href], #albumGallery .item a[href], .album-view .item a[href], .photo-holder .item a[href]").array() {
@@ -392,11 +401,165 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         playbackCache[key] = (Date(), video)
     }
 
+    // MARK: JSON / HTML response parsing
+
+    private func jsonValue(from text: String) -> Any? {
+        guard let data = text.data(using: .utf8) else { return nil }
+        return try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
+    }
+
+    private func jsonRecords(in value: Any) -> [[String: Any]] {
+        if let array = value as? [Any] { return array.flatMap(jsonRecords(in:)) }
+        guard let object = value as? [String: Any] else { return [] }
+        let collectionKeys = [
+            "videos", "video_list", "model_videos", "albums", "album_list", "photos", "images",
+            "gallery", "items", "results", "records", "entries", "list", "data", "result",
+            "response", "payload", "content", "model", "profile"
+        ]
+        for key in collectionKeys {
+            guard let actualKey = object.keys.first(where: { $0.caseInsensitiveCompare(key) == .orderedSame }),
+                  let nested = object[actualKey] else { continue }
+            let records = jsonRecords(in: nested)
+            if !records.isEmpty { return records }
+        }
+        return [object]
+    }
+
+    private func jsonText(_ object: [String: Any], keys: [String]) -> String? {
+        for key in keys {
+            guard let actualKey = object.keys.first(where: { $0.caseInsensitiveCompare(key) == .orderedSame }),
+                  let value = object[actualKey] else { continue }
+            if let text = value as? String, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return text.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            if let number = value as? NSNumber { return number.stringValue }
+            if let nested = value as? [String: Any],
+               let text = jsonText(nested, keys: ["url", "src", "href", "file", "original"]) {
+                return text
+            }
+        }
+        return nil
+    }
+
+    private func embeddedHTML(in text: String) -> String? {
+        guard let value = jsonValue(from: text) else { return nil }
+        func findHTML(_ value: Any) -> String? {
+            if let string = value as? String, string.localizedCaseInsensitiveContains("<") { return string }
+            if let object = value as? [String: Any] {
+                for key in ["html", "block", "content", "response", "data", "result"] {
+                    if let child = object.first(where: { $0.key.caseInsensitiveCompare(key) == .orderedSame })?.value,
+                       let html = findHTML(child) { return html }
+                }
+            }
+            if let values = value as? [Any] {
+                for child in values { if let html = findHTML(child) { return html } }
+            }
+            return nil
+        }
+        return findHTML(value)
+    }
+
+    private func parseJSONVideos(_ text: String, baseURL: URL) -> [Video] {
+        guard let root = jsonValue(from: text) else { return [] }
+        let rows = jsonRecords(in: root)
+        var output: [Video] = []
+        var seen = Set<String>()
+        for row in rows {
+            guard let title = jsonText(row, keys: ["title", "video_title", "name", "label"]),
+                  let looseURL = jsonText(row, keys: ["page_url", "detail_url", "permalink", "href", "link", "url", "video_url", "stream_url", "file", "src", "media_url", "play_url"]),
+                  let loose = absolute(looseURL, relativeTo: baseURL) else { continue }
+            let streamRaw = jsonText(row, keys: ["video_url", "stream_url", "stream", "file", "src", "media_url", "play_url"])
+            let stream = streamRaw.flatMap { absolute($0, relativeTo: baseURL) }
+            let looseIsMedia = isPlayable(loose)
+            let pageRaw = jsonText(row, keys: ["page_url", "detail_url", "permalink", "href", "link"])
+            let page = pageRaw.flatMap { absolute($0, relativeTo: baseURL) } ?? (looseIsMedia ? nil : loose)
+            let playable = stream ?? (looseIsMedia ? loose : nil)
+            let thumbnailRaw = jsonText(row, keys: ["thumbnail_url", "thumbnail", "thumb", "poster", "image", "cover"])
+            let thumbnail = thumbnailRaw.flatMap { absolute($0, relativeTo: baseURL) }
+            guard page != nil || playable != nil else { continue }
+            let id = jsonText(row, keys: ["id", "video_id", "uid", "slug"]) ?? page?.absoluteString ?? playable!.absoluteString
+            guard seen.insert(id).inserted else { continue }
+            var video = Video(id: id, title: title)
+            video.streamURL = playable?.absoluteString ?? ""
+            video.pageURL = page
+            video.thumbnailURL = thumbnail
+            video.duration = jsonText(row, keys: ["duration", "length", "time"]) ?? ""
+            video.views = jsonText(row, keys: ["views", "view_count"]) ?? ""
+            video.likes = jsonText(row, keys: ["likes", "rating", "like_count"]) ?? ""
+            video.category = jsonText(row, keys: ["category", "category_name"]) ?? "Featured"
+            video.streamHeaders = (row["headers"] as? [String: String]) ?? (row["http_headers"] as? [String: String])
+            output.append(video)
+        }
+        return output
+    }
+
+    private func parseJSONAlbums(_ text: String, baseURL: URL, modelName: String?) -> [AlbumRef] {
+        guard let root = jsonValue(from: text) else { return [] }
+        let rows = jsonRecords(in: root)
+        var output: [AlbumRef] = []
+        var seen = Set<String>()
+        for row in rows {
+            guard let title = jsonText(row, keys: ["title", "album_title", "name"]),
+                  let rawURL = jsonText(row, keys: ["album_url", "permalink", "href", "link", "url"]),
+                  let url = absolute(rawURL, relativeTo: baseURL) else { continue }
+            let id = jsonText(row, keys: ["id", "album_id", "uid"]) ?? url.absoluteString
+            guard seen.insert(id).inserted else { continue }
+            let thumbRaw = jsonText(row, keys: ["thumbnail_url", "thumbnail", "thumb", "cover", "image"])
+            output.append(AlbumRef(id: id, title: title, url: url.absoluteString,
+                                   thumbnailURL: thumbRaw.flatMap { absolute($0, relativeTo: baseURL)?.absoluteString },
+                                   modelName: jsonText(row, keys: ["model_name"]) ?? modelName))
+        }
+        return output
+    }
+
+    private func parseJSONPhotos(_ text: String, baseURL: URL) -> [AlbumPhoto] {
+        guard let root = jsonValue(from: text) else { return [] }
+        let rows = jsonRecords(in: root)
+        var output: [AlbumPhoto] = []
+        var seen = Set<String>()
+        for row in rows {
+            guard let rawFull = jsonText(row, keys: ["full_url", "original", "source", "file", "href", "link", "url", "image"]),
+                  let full = absolute(rawFull, relativeTo: baseURL) else { continue }
+            let thumbRaw = jsonText(row, keys: ["thumbnail_url", "thumbnail", "thumb", "preview", "src"]) ?? rawFull
+            let thumb = absolute(thumbRaw, relativeTo: baseURL) ?? full
+            let id = jsonText(row, keys: ["id", "photo_id", "uid"]) ?? full.absoluteString
+            if seen.insert(id).inserted {
+                output.append(AlbumPhoto(id: id, thumbURL: thumb.absoluteString, fullURL: full.absoluteString))
+            }
+        }
+        return output
+    }
+
+    private func parseJSONModelProfile(_ text: String, fallbackName: String) -> ModelProfile? {
+        guard let root = jsonValue(from: text) else { return nil }
+        for row in jsonRecords(in: root) {
+            guard let name = jsonText(row, keys: ["name", "model_name", "title"]) else { continue }
+            let imageRaw = jsonText(row, keys: ["image_url", "avatar", "image", "thumbnail", "photo"])
+            return ModelProfile(name: name, imageURL: imageRaw)
+        }
+        return nil
+    }
+
+    private func normalizedModelURL(for model: ModelRef) -> URL? {
+        let raw = model.url.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else { return nil }
+        if let parsed = URL(string: raw, relativeTo: config.baseURL)?.absoluteURL,
+           ["http", "https"].contains(parsed.scheme?.lowercased() ?? ""),
+           parsed.host != nil,
+           parsed.path.lowercased().contains("/models/") {
+            return modelBaseURL(parsed) ?? parsed
+        }
+        let candidate = raw.split(separator: "/").last.map(String.init) ?? raw
+        guard !candidate.isEmpty, candidate != ".", candidate != "..",
+              !candidate.contains("?"), !candidate.contains("#") else { return nil }
+        return config.url(path: "models/\(candidate)/")
+    }
+
     // MARK: HTML processing
 
     private func parseVideos(at url: URL, selector: String, fresh: Bool = false) async throws -> [Video] {
         let html = try await loadHTML(url, fresh: fresh)
-        let document = try SwiftSoup.parse(html, url.absoluteString)
+        let document = try SwiftSoup.parse(embeddedHTML(in: html) ?? html, url.absoluteString)
         let cards = try document.select(selector).array()
         var videos: [Video] = []
         var seen = Set<String>()
