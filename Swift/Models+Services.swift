@@ -47,6 +47,8 @@ struct Video: Identifiable, Codable, Hashable, Sendable {
     var pageURL: URL?
     var previewURL: URL?
     var qualities: [StreamQuality] = []
+    /// Optional provider-specific headers for direct media URLs (for example Authorization).
+    var streamHeaders: [String: String]? = nil
 
     var isSavedReel: Bool { id.hasPrefix("reel_") }
 
