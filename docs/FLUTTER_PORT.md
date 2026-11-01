@@ -64,7 +64,7 @@ Source checkout: sibling `../../jee` at `ffea967` (read-only). Flutter source is
 
 ### Known gaps (not silently treated as parity)
 
-- No HTML/JSON fixtures are present in Flutter `test/` or app assets, and fetching the live site into repository tests was not performed. Therefore there is no trustworthy fixture-based proof or XCTest result.
+- Flutter test fixtures did exist inline in `jee/test/scraper_test.dart` and `jee/test/models_test.dart`; representative fixtures have now been saved under `Tests/Fixtures/`. There is still no XCTest target in the one-target Xcode project, so those fixtures are not yet executed by XCTest.
 - The scan appendix is a complete broad textual match list; selectors, JSON paths, request calls and each distinct regex call site still require a verified function-level mapping. This port audit is **incomplete** and must not be described as 1:1 complete.
 - Swift uses `NSRegularExpression` and SwiftSoup helpers in `CatalogRepository.swift`, but the exhaustive one-function-per-Dart-function extraction layer and test target have not been added.
 
@@ -410,3 +410,16 @@ The following is the complete broad `rg` output over all Dart source files for t
 .\lib\video_repository.dart:439:        : rawDomain.replaceFirst(RegExp(r'^\.'), '');
 .\lib\video_repository.dart:515:        value.toLowerCase().replaceFirst(RegExp(r'^www\.'), '');
 ```
+
+## Follow-up parity fixes (2026-11-01)
+
+| Flutter behavior | Swift change | Fixture | Status |
+|---|---|---|---|
+| `Scraper.searchPeople`: probe normalized and compact slugs before search-page discovery; fetch albums for exact slug matches | `searchPeople` now tries both profile routes first, treats search-page failure as non-fatal, and loads albums for up to two exact matches | `model-profile.html`, `model-albums.html` | Ported; XCTest not run (project has no test target) |
+| `Scraper.videoModels`: `.media-models a[href]`, then `.media-info a[href*="/models/"]` only if empty | Selector order and fallback now match | Flutter inline model fixture | Ported |
+| `Scraper._albumsFrom`: `.thumb--albums`, otherwise configured cards containing album links | Swift follows the same selector fallback and title/image-source priority | `model-albums.html` | Ported |
+| `Scraper.albumPhotos`: `a.grid-item[href]`, then legacy gallery selectors only if empty | Swift follows fallback order | `album-photos.html` | Ported |
+| `Scraper._parseCard`: duration probes icon, configured selector, `li`/duration nodes, card text, markup, `data-duration`; album cards without duration are omitted | Added these duration probes and album guard; video IDs omit query strings as Flutter does | `homepage-card.html` | Ported; not runtime-tested |
+| `Scraper._extractStreams`: plain URL scan permits mp4/m3u8/webm, max 30; playable filters also allow mkv/mov/m4v/mpd | Aligned stream scan extensions/limit and playable extension filter | `video-detail.html` | Ported; no end-to-end player run |
+
+The workflow now also runs on `codex/**` pushes so this PR branch produces a build artifact. The full broad Dart search appendix above is retained; it includes many unrelated stores and widgets. This remains a static inventory, not an exhaustive one-to-one executable mapping for every one of the 336 hits. The iOS project still has a single app target and no XCTest target; adding/running XCTest would require changing that project structure. Do not interpret fixtures alone as proof of parser parity.

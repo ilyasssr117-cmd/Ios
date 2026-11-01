@@ -178,42 +178,62 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         try ensureConfigured()
         let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !term.isEmpty else { return PeopleSearchResult(models: [], albums: []) }
-
-        let searchURL = config.searchURL(term, page: 0, sortBy: nil)
-        let html = try await loadHTML(searchURL)
-        let document = try SwiftSoup.parse(html, searchURL.absoluteString)
+        let lower = term.lowercased()
+        let slug = lower.replacingOccurrences(of: #"\s+"#, with: "-", options: .regularExpression)
+            .replacingOccurrences(of: #"[^a-z0-9_-]"#, with: "", options: .regularExpression)
+        let compactSlug = lower.replacingOccurrences(of: #"[^a-z0-9]+"#, with: "", options: .regularExpression)
+        let slugs = Array(Set([slug, compactSlug]).filter { !$0.isEmpty }).sorted()
         var modelsByURL: [String: ModelRef] = [:]
-        for anchor in try document.select("a[href*=/models/]").array() {
-            guard let href = try? anchor.attr("href"), let url = URL(string: href, relativeTo: searchURL)?.absoluteURL,
-                  let canonical = modelBaseURL(url) else { continue }
-            let image = try? anchor.select("img").first()?.attr("data-src")
-            let imageFallback = try? anchor.select("img").first()?.attr("src")
-            let name = ((try? anchor.text()) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            let resolvedName = name.isEmpty ? (try? anchor.attr("title")) ?? modelName(from: canonical) : name
-            modelsByURL[canonical.absoluteString] = ModelRef(name: resolvedName, url: canonical.absoluteString,
-                imageURL: absolute(image ?? imageFallback ?? "", relativeTo: searchURL)?.absoluteString)
-        }
+        var albumsByID: [String: AlbumRef] = [:]
 
-        // Direct model-slug probes mirror Scraper.searchPeople in Dart.
-        let slug = term.lowercased().split(whereSeparator: { !$0.isLetter && !$0.isNumber }).joined(separator: "-")
-        if !slug.isEmpty {
-            let candidate = config.url(path: "models/\(slug)/")
-            if !modelsByURL.keys.contains(candidate.absoluteString),
-               let profile = try? await modelProfile(for: ModelRef(name: term, url: candidate.absoluteString)) {
+        // Probe exact profile routes first, as the Flutter scraper does. A
+        // broken search endpoint must not suppress an otherwise valid model.
+        for candidateSlug in slugs {
+            let candidate = config.url(path: "models/\(candidateSlug)/")
+            if let profile = try? await modelProfile(for: ModelRef(name: term, url: candidate.absoluteString)) {
                 modelsByURL[candidate.absoluteString] = ModelRef(name: profile.name, url: candidate.absoluteString, imageURL: profile.imageURL)
             }
         }
 
-        let sorted = modelsByURL.values.sorted { a, b in
-            func rank(_ model: ModelRef) -> Int {
-                let name = model.name.lowercased(), q = term.lowercased()
-                if name == q { return 0 }; if name.hasPrefix(q) { return 1 }; if name.contains(q) { return 2 }; return 3
+        let searchURL = config.searchURL(term, page: 0, sortBy: nil)
+        if let html = try? await loadHTML(searchURL), let document = try? SwiftSoup.parse(html, searchURL.absoluteString) {
+            for anchor in (try? document.select("a[href*=/models/]").array()) ?? [] {
+                guard let href = try? anchor.attr("href"), let url = URL(string: href, relativeTo: searchURL)?.absoluteURL,
+                      let canonical = modelBaseURL(url), !modelsByURL.keys.contains(canonical.absoluteString) else { continue }
+                let imageElement = try? anchor.select("img").first()
+                var image = ""
+                for attribute in ["data-src", "data-original", "data-webp", "src"] {
+                    let value = (try? imageElement?.attr(attribute)) ?? ""
+                    if !value.isEmpty && !value.hasPrefix("data:") { image = value; break }
+                }
+                if image.isEmpty { image = (try? imageElement?.attr("alt")) ?? "" }
+                let text = ((try? anchor.text()) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                let title = (try? anchor.attr("title")) ?? ""
+                let name = !text.isEmpty ? text : (!title.isEmpty ? title : modelName(from: canonical))
+                modelsByURL[canonical.absoluteString] = ModelRef(name: name, url: canonical.absoluteString,
+                    imageURL: absolute(image, relativeTo: searchURL)?.absoluteString)
             }
-            return rank(a) < rank(b)
+            for album in (try? parseAlbums(document, baseURL: searchURL)) ?? [] { albumsByID[album.id] = album }
         }
-        return PeopleSearchResult(models: Array(sorted.prefix(20)), albums: try parseAlbums(document, baseURL: searchURL))
-    }
 
+        func rank(_ model: ModelRef) -> Int {
+            let name = model.name.lowercased()
+            if name == lower { return 0 }; if name.hasPrefix(lower) { return 1 }
+            if name.contains(lower) { return 2 }; return 3
+        }
+        let sorted = modelsByURL.values.sorted { rank($0) < rank($1) }
+        let exactModels = sorted.filter { model in
+            guard let url = URL(string: model.url), let base = modelBaseURL(url) else { return false }
+            return slugs.contains(base.lastPathComponent.lowercased())
+        }.prefix(2)
+        for model in exactModels {
+            if let found = try? await albums(for: model) {
+                for album in found { albumsByID[album.id] = album }
+            }
+        }
+        let orderedAlbums = albumsByID.values.sorted { ($0.modelName == nil ? 1 : 0) < ($1.modelName == nil ? 1 : 0) }
+        return PeopleSearchResult(models: Array(sorted.prefix(20)), albums: Array(orderedAlbums.prefix(40)))
+    }
     func related(to video: Video, fresh: Bool = false) async throws -> [Video] {
         guard let pageURL = video.pageURL else { return [] }
         let list = try await parseVideos(at: pageURL, selector: config.relatedCardSelector, fresh: fresh)
@@ -226,7 +246,9 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         let document = try SwiftSoup.parse(html, pageURL.absoluteString)
         var output: [ModelRef] = []
         var seen = Set<String>()
-        for anchor in try document.select(".media-models a[href], .media-info a[href*=/models/], a[href*=/models/]").array() {
+        var modelAnchors = try document.select(".media-models a[href]").array()
+        if modelAnchors.isEmpty { modelAnchors = try document.select(".media-info a[href*=/models/]").array() }
+        for anchor in modelAnchors {
             guard let href = try? anchor.attr("href"), let raw = URL(string: href, relativeTo: pageURL)?.absoluteURL,
                   let url = modelBaseURL(raw), seen.insert(url.absoluteString).inserted else { continue }
             let text = (try? anchor.text())?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -314,12 +336,16 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         let document = try SwiftSoup.parse(embeddedHTML(in: html) ?? html, url.absoluteString)
         var output: [AlbumPhoto] = []
         var seen = Set<String>()
-        for anchor in try document.select("a.grid-item[href], #albumGallery .item a[href], .album-view .item a[href], .photo-holder .item a[href]").array() {
+        var photoAnchors = try document.select("a.grid-item[href]").array()
+        if photoAnchors.isEmpty { photoAnchors = try document.select("#albumGallery .item a[href], .album-view .item a[href], .photo-holder .item a[href]").array() }
+        for anchor in photoAnchors {
             guard let href = try? anchor.attr("href"), let full = absolute(href, relativeTo: url),
                   let image = try? anchor.select("img").first() else { continue }
-            let dataSrc = (try? image.attr("data-src")) ?? ""
-            let plainSrc = (try? image.attr("src")) ?? ""
-            let thumbRaw = dataSrc.isEmpty ? plainSrc : dataSrc
+            var thumbRaw = ""
+            for attribute in ["data-src", "data-original", "data-webp", "src"] {
+                let value = (try? image.attr(attribute)) ?? ""
+                if !value.isEmpty && !value.hasPrefix("data:") { thumbRaw = value; break }
+            }
             let thumb = absolute(thumbRaw, relativeTo: url) ?? full
             let path = full.path.isEmpty ? full.absoluteString : full.path
             let id = firstMatch(#"/sources/(.+?)/?$"#, in: path) ?? path
@@ -341,12 +367,12 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         let document = try SwiftSoup.parse(html, page.absoluteString)
         let candidates = extractStreams(html, document: document, baseURL: page)
         guard let best = candidates.first else { throw SourceNotConfiguredError(message: "No direct media stream was found on the video page.") }
-        let configuredTitle = firstMatch(config.detailTitlePattern, in: html)
+        let configuredTitle = firstMatch(config.detailTitlePattern, in: html, options: [.caseInsensitive, .dotMatchesLineSeparators])
         let pageTitle = (try? document.select("h1").first()?.text())
             ?? (try? document.select("meta[property=og:title]").first()?.attr("content"))
             ?? configuredTitle ?? video.title
         let description = (try? document.select(config.descriptionSelector).first()?.attr("content")) ?? video.description
-        let configuredPreview = firstMatch(config.previewPattern, in: html)
+        let configuredPreview = firstMatch(config.previewPattern, in: html, options: [.caseInsensitive, .dotMatchesLineSeparators])
         let poster = (try? document.select("video[poster]").first()?.attr("poster"))
             ?? (try? document.select("meta[property=og:image]").first()?.attr("content"))
             ?? configuredPreview ?? ""
@@ -584,29 +610,60 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         for card in cards {
             if let video = try parseVideoCard(card, pageURL: baseURL), seen.insert(video.id).inserted { videos.append(video) }
         }
-        if videos.isEmpty {
-            // Some source templates don't wrap cards in the expected classes.
-            for anchor in try document.select("a[href], [data-href], [data-url]").array() {
-                guard let video = try parseVideoCard(anchor, pageURL: baseURL), seen.insert(video.id).inserted else { continue }
-                videos.append(video)
-            }
-        }
         return videos
     }
 
     private func parseModelProfile(_ payload: String, fallbackName: String, baseURL: URL) throws -> ModelProfile {
         if let profile = parseJSONModelProfile(payload, fallbackName: fallbackName, baseURL: baseURL) { return profile }
         let document = try SwiftSoup.parse(embeddedHTML(in: payload) ?? payload, baseURL.absoluteString)
-        let name = (try? document.select("meta[property=og:title]").first()?.attr("content"))
-            ?? (try? document.select("h1").first()?.text())
-            ?? fallbackName
-        let image = (try? document.select("meta[property=og:image]").first()?.attr("content"))
-            ?? (try? document.select("meta[name=twitter:image]").first()?.attr("content"))
+        var person: [String: Any]?
+        func findPerson(_ value: Any) {
+            guard person == nil else { return }
+            if let object = value as? [String: Any] {
+                if (object["@type"] as? String)?.lowercased() == "person" { person = object; return }
+                for child in object.values { findPerson(child) }
+            } else if let array = value as? [Any] {
+                for child in array { findPerson(child) }
+            }
+        }
+        let scripts = (try? document.select("script[type=application/ld+json]").array()) ?? []
+        for script in scripts {
+            let source = (try? script.html()) ?? ""
+            if let data = source.data(using: .utf8),
+               let json = try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) { findPerson(json) }
+        }
+        let name = (person?["name"] as? String)
+            ?? (try? document.select("meta[property=og:title]").first()?.attr("content"))
+            ?? (try? document.select("h1").first()?.text()) ?? fallbackName
+        var image = person?["image"] as? String
+        if image == nil, let object = person?["image"] as? [String: Any] { image = object["url"] as? String }
+        if image == nil, let images = person?["image"] as? [Any] {
+            for value in images {
+                if let url = value as? String { image = url; break }
+                if let object = value as? [String: Any], let url = object["url"] as? String { image = url; break }
+            }
+        }
+        if image == nil {
+            for selector in ["meta[property=og:image]", "meta[name=twitter:image]", "link[rel=image_src]"] {
+                guard let selected = try? document.select(selector), let node = selected.first() else { continue }
+                let attribute = selector.hasPrefix("link") ? "href" : "content"
+                let value = (try? node.attr(attribute)) ?? ""
+                if !value.isEmpty && value.range(of: #"logo|/static/"#, options: .regularExpression.union(.caseInsensitive)) == nil {
+                    image = value
+                    break
+                }
+            }
+        }
+        if image == nil {
+            for script in scripts {
+                let source = (try? script.html()) ?? ""
+                if let match = firstMatch(#""image"\s*:\s*"([^"]+)""#, in: source, options: []) { image = match; break }
+            }
+        }
         let cleanedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         return ModelProfile(name: cleanedName.isEmpty ? fallbackName : cleanedName,
                             imageURL: absolute(image ?? "", relativeTo: baseURL)?.absoluteString)
     }
-
     private func parseVideoCard(_ card: Element, pageURL: URL) throws -> Video? {
         let anchors: [Element] = (card.tagName().lowercased() == "a" ? [card] : [])
             + (try card.select(config.anchorSelector).array())
@@ -639,7 +696,7 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
 
         let image = try card.select(config.imageSelector).first()
         var imageRaw = ""
-        for name in ["data-src", "data-original", "data-webp", "data-lazy-src", "src"] {
+        for name in ["data-src", "data-original", "data-lazy-src", "src"] {
             let value: String = (try? image?.attr(name)) ?? ""
             if !value.isEmpty { imageRaw = value; break }
         }
@@ -659,7 +716,9 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
             cardText
         ]
         var title = titleCandidates.map(cleanText).first(where: { !$0.isEmpty }) ?? ""
-        title = cleanVideoTitle(title)
+        let polluted = firstMatch(#"^\s*\d{1,3}\s*%"#, in: title, options: []) != nil
+            || firstMatch(#"(\d[\d,.]*\s*[KkMm]?)\s*views?\b"#, in: title, options: [.caseInsensitive]) != nil
+        title = polluted ? cleanVideoTitle(title) : cleanText(title)
         if title.isEmpty { title = cleanVideoTitle(anchorText) }
         if title.isEmpty { title = cleanVideoTitle(cardText) }
         guard !title.isEmpty else { return nil }
@@ -670,21 +729,27 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
             attributes: ["data-duration", "content", "title", "aria-label"]
         )
         let durationPattern = #"\b(\d{1,2}:\d{2}(?::\d{2})?)\b"#
-        let duration = firstMatch(durationPattern, in: durationIcon)
-            ?? firstMatch(durationPattern, in: durationText)
-            ?? firstMatch(durationPattern, in: "\(anchorText) \(cardText)")
+        let nodeDurations = (try card.select(#"li, [class*="duration"], [data-duration]"#).array())
+        let nodeDuration = nodeDurations.compactMap { try? $0.text() }.compactMap { firstMatch(durationPattern, in: $0, options: []) }.first
+        let markupDuration = firstMatch(#"\d{1,2}:\d{2}(?::\d{2})?"#, in: try card.html(), options: [])
+        let duration = firstMatch(durationPattern, in: durationIcon, options: [])
+            ?? firstMatch(durationPattern, in: durationText, options: [])
+            ?? nodeDuration
+            ?? firstMatch(durationPattern, in: "\(anchorText) \(cardText)", options: [])
+            ?? markupDuration
             ?? cleanText((try? card.attr("data-duration")) ?? "")
+        if duration.isEmpty && firstMatch(#"\b\d+\s+(?:photos?|pics?|pictures?|images?)\b"#, in: cardText, options: [.caseInsensitive]) != nil { return nil }
 
         let viewsIcon = iconParentText(in: card, selector: config.viewsIconSelector)
         let viewsText = selectedMetadataText(
             in: card, selector: config.viewsSelector,
             attributes: ["data-views", "content", "title", "aria-label"]
         ) + " " + cleanText((try? card.attr("data-views")) ?? "")
-        let viewsPattern = #"(\d[\d,.]*\s*[KkMmBb]?)\s*views?\b"#
+        let viewsPattern = #"(\d[\d,.]*\s*[KkMm]?)\s*views?\b"#
         let iconViews = normalizeViews(viewsIcon)
         let cardViews = firstMatch(viewsPattern, in: "\(anchorText) \(cardText)")
             .map(normalizeViews) ?? ""
-        let viewsRaw = firstMatch(#"(\d[\d,.]*\s*[KkMmBb]?)"#, in: viewsText)
+        let viewsRaw = firstMatch(#"(\d[\d,.]*\s*[KkMm]?)"#, in: viewsText, options: [])
         let nodeViews = normalizeViews(viewsRaw ?? viewsText)
         let views = !iconViews.isEmpty ? iconViews
             : (!cardViews.isEmpty ? cardViews : nodeViews)
@@ -694,17 +759,15 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
             attributes: ["data-rating", "data-likes", "content", "title", "aria-label"]
         ) + " " + cleanText((try? card.attr("data-rating")) ?? "")
           + " " + cleanText((try? card.attr("data-likes")) ?? "")
-        let likesRaw = firstMatch(#"^\s*(\d{1,3})\s*%"#, in: anchorText)
-            ?? firstMatch(#"^\s*(\d{1,3})\s*%"#, in: cardText)
-            ?? firstMatch(#"(\d{1,3})\s*%"#, in: likesText)
-            ?? firstMatch(#"^\s*(\d{1,3})(?:\.0+)?\s*$"#, in: likesText)
+        let likesRaw = firstMatch(#"^\s*(\d{1,3})\s*%"#, in: anchorText, options: [])
+            ?? firstMatch(#"^\s*(\d{1,3})\s*%"#, in: cardText, options: [])
+            ?? firstMatch(#"(\d{1,3})\s*%"#, in: likesText, options: [])
+            ?? firstMatch(#"^\s*(\d{1,3})(?:\.0+)?\s*$"#, in: likesText, options: [])
         let likes = likesRaw.map { "\($0)%" } ?? ""
         let date = iconParentText(in: card, selector: config.dateIconSelector)
 
         let dataID = ((try? card.attr("data-id")) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        var queryPart = ""
-        if let query = videoPage.query, !query.isEmpty { queryPart = "?" + query }
-        let pageKey: String = (videoPage.host ?? "") + videoPage.path + queryPart
+        let pageKey: String = (videoPage.host ?? "") + videoPage.path
         let id = dataID.isEmpty ? pageKey : dataID
         let directCandidates = [
             (try? card.attr("data-video-url")) ?? "",
@@ -732,16 +795,30 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
     private func parseAlbums(_ document: Document, baseURL: URL, modelName: String? = nil) throws -> [AlbumRef] {
         var output: [AlbumRef] = []
         var seen = Set<String>()
-        let cards = try document.select(".thumb--albums, a[href*=/albums/]").array()
+        var cards = try document.select(".thumb--albums").array()
+        if cards.isEmpty {
+            cards = try document.select(config.cardSelector).array().filter { card in
+                guard let anchors = try? card.select("a[href*=/albums/]") else { return false }
+                return anchors.first() != nil
+            }
+        }
         for card in cards {
             let anchor = try card.tagName().lowercased() == "a" ? card : (card.select("a[href]").first())
             guard let anchor, let href = try? anchor.attr("href"), let url = absolute(href, relativeTo: baseURL),
                   url.path.lowercased().contains("/albums/"), seen.insert(url.absoluteString).inserted else { continue }
             let image = try card.select("img").first()
-            let title = cleanText((try? anchor.attr("title")) ?? (try? card.select(".thumb__title, .title").first()?.text()) ?? (try? image?.attr("alt")) ?? "")
-            let name = title.isEmpty ? (url.lastPathComponent.replacingOccurrences(of: "-", with: " ")) : title
+            let anchorTitle = cleanText((try? anchor.attr("title")) ?? "")
+            let titleText = cleanText((try? card.select(".thumb__title, .title").first()?.text()) ?? "")
+            let altText = cleanText((try? image?.attr("alt")) ?? "")
+            let title = [anchorTitle, titleText, altText].first(where: { !$0.isEmpty }) ?? ""
+            let name = title.isEmpty ? url.lastPathComponent.replacingOccurrences(of: #"[-_]+"#, with: " ", options: .regularExpression).trimmingCharacters(in: .whitespacesAndNewlines) : title
+            var thumbnailRaw = ""
+            for attribute in ["data-src", "data-original", "data-webp", "src"] {
+                let value = (try? image?.attr(attribute))?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                if !value.isEmpty && !value.hasPrefix("data:") { thumbnailRaw = value; break }
+            }
             output.append(AlbumRef(id: "\(url.host ?? "")\(url.path)", title: name, url: url.absoluteString,
-                                   thumbnailURL: absolute((try? image?.attr("data-src")) ?? (try? image?.attr("src")) ?? "", relativeTo: baseURL)?.absoluteString,
+                                   thumbnailURL: absolute(thumbnailRaw, relativeTo: baseURL)?.absoluteString,
                                    modelName: modelName))
         }
         return output
@@ -808,14 +885,14 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         if let meta = try? document.select("meta[property=og:video], meta[property=og:video:url], meta[property=og:video:secure_url], meta[name=twitter:player:stream]").array() {
             for node in meta { add(try? node.attr("content"), rank: 2) }
         }
-        for value in allMatches(#""contentUrl"\s*:\s*"([^"]+)""#, in: html) {
+        for value in allMatches(#""contentUrl"\s*:\s*"([^"]+)""#, in: html, options: []) {
             add(value, rank: 3)
         }
-        for value in allMatches(config.streamURLPattern, in: html) {
+        for value in allMatches(config.streamURLPattern, in: html, options: [.caseInsensitive, .dotMatchesLineSeparators]) {
             add(value, rank: 4, label: value)
         }
         let plain = html.replacingOccurrences(of: #"\/"#, with: "/")
-        for value in allMatches(#"(https?://[^\s\"'<>\\]+?\.(?:mp4|m3u8|m4v|mov)(?:\?[^\s\"'<>\\]*)?)"#, in: plain) {
+        for value in allMatches(#"(https?://[^\s\"'<>\\]+?\.(?:mp4|m3u8|webm)[^\s\"'<>\\]*)"#, in: plain, options: []).prefix(30) {
             add(value, rank: 5, label: value)
         }
 
@@ -849,7 +926,7 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         request.setValue((referer ?? config.baseURL).absoluteString, forHTTPHeaderField: "Referer")
         extraHeaders?.forEach { request.setValue($1, forHTTPHeaderField: $0) }
         var lastError: Error?
-        for attempt in 0..<2 {
+        for attempt in 0..<3 {
             do {
                 let (data, response) = try await session.data(for: request)
                 guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
@@ -860,7 +937,14 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
                 return html
             } catch {
                 lastError = error
-                if attempt == 0 { try? await Task.sleep(for: .milliseconds(500)) }
+                let shouldRetry: Bool
+                if let status = error as? HTTPStatusError {
+                    shouldRetry = [408, 425, 429].contains(status.code) || status.code >= 500
+                } else {
+                    shouldRetry = (error as? URLError).map { [.timedOut, .cannotConnectToHost, .networkConnectionLost, .notConnectedToInternet, .dnsLookupFailed].contains($0.code) } ?? false
+                }
+                guard shouldRetry, attempt < 2 else { throw error }
+                try? await Task.sleep(for: .milliseconds(450 * (1 << attempt)))
             }
         }
         throw lastError ?? URLError(.badServerResponse)
@@ -894,8 +978,9 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         let nonMedia = #"\.(?:jpe?g|png|gif|webp|svg|ico|css|js|json|vtt|srt|woff2?|ttf|html?)(?:$|[?#])"#
         if path.range(of: nonMedia, options: .regularExpression) != nil { return false }
         let resource = path + (query.isEmpty ? "" : "?\(query)")
-        return [".mp4", ".m3u8", ".mov", ".m4v", "/get_file/"]
-            .contains(where: { resource.contains($0) })
+        let playable = #"\.(?:mp4|m3u8|webm|mkv|mov|m4v|mpd)(?:$|[/?#&])"#
+        return resource.range(of: playable, options: .regularExpression.union(.caseInsensitive)) != nil
+            || resource.contains("/get_file/")
     }
 
     /// Read a metadata node's text and common data attributes. Some source
@@ -995,16 +1080,16 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
             .replacingOccurrences(of: "&amp;", with: "&")
     }
 
-    private func firstMatch(_ pattern: String, in text: String) -> String? {
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive, .dotMatchesLineSeparators]),
+    private func firstMatch(_ pattern: String, in text: String, options: NSRegularExpression.Options = [.caseInsensitive, .dotMatchesLineSeparators]) -> String? {
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: options),
               let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) else { return nil }
         let capture = match.numberOfRanges > 1 && match.range(at: 1).location != NSNotFound ? 1 : 0
         guard let range = Range(match.range(at: capture), in: text) else { return nil }
         return String(text[range])
     }
 
-    private func allMatches(_ pattern: String, in text: String) -> [String] {
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive, .dotMatchesLineSeparators]) else { return [] }
+    private func allMatches(_ pattern: String, in text: String, options: NSRegularExpression.Options = [.caseInsensitive, .dotMatchesLineSeparators]) -> [String] {
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: options) else { return [] }
         return regex.matches(in: text, range: NSRange(text.startIndex..., in: text)).compactMap { match in
             let capture = match.numberOfRanges > 1 && match.range(at: 1).location != NSNotFound ? 1 : 0
             guard let range = Range(match.range(at: capture), in: text) else { return nil }
