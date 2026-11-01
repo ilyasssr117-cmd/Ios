@@ -48,6 +48,8 @@ jobs:
             -destination 'generic/platform=iOS' \
             -derivedDataPath build/DerivedData \
             SWIFT_ENABLE_EXPLICIT_MODULES=NO \
+            SWIFT_ENABLE_BATCH_MODE=NO \
+            -jobs 1 \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             build | tee build/xcodebuild.log
