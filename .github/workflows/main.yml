@@ -1,92 +1,69 @@
-name: Build IPA
+name: iOS Build
 
 on:
-  workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  build-ios:
+    name: Build VXTube for iOS
     runs-on: macos-15
+    timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: maxim-lobanov/setup-xcode@v1
+      - name: Select latest stable Xcode
+        uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
-
-      - name: Write project.yml
+      - name: Show Xcode version
         run: |
-          cat > project.yml <<'YAML'
-          name: VXTube
-          options:
-            bundleIdPrefix: com.flow
-            deploymentTarget:
-              iOS: "18.0"
-          packages:
-            SwiftSoup:
-              url: https://github.com/scinfu/SwiftSoup
-              from: 2.7.0
-          targets:
-            VXTube:
-              type: application
-              platform: iOS
-              sources:
-                - path: Swift
-              dependencies:
-                - package: SwiftSoup
-              info:
-                path: Info.plist
-                properties:
-                  CFBundleDisplayName: Flow
-                  UILaunchScreen: {}
-                  UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
-                  UIBackgroundModes: [audio]
-                  NSPhotoLibraryAddUsageDescription: Allow Flow to save videos and photos to your photo library.
-                  NSSupportsLiveActivities: true
-                  ITSAppUsesNonExemptEncryption: false
-                  CFBundleURLTypes:
-                    - CFBundleURLSchemes: [watchtube]
-              settings:
-                base:
-                  PRODUCT_BUNDLE_IDENTIFIER: com.flow.vxtube
-                  SWIFT_VERSION: "5.0"
-                  MARKETING_VERSION: "1.1.0"
-                  CURRENT_PROJECT_VERSION: "2"
-                  CODE_SIGNING_ALLOWED: "NO"
-                  CODE_SIGNING_REQUIRED: "NO"
-                  CODE_SIGN_IDENTITY: ""
+          xcodebuild -version
+          xcodebuild -showsdks
 
-          YAML
+      - name: Resolve Swift Package dependencies
+        run: xcodebuild -resolvePackageDependencies -project VXTube.xcodeproj -scheme VXTube
 
-      - name: Generate Xcode project
-        run: xcodegen generate
-
-      - name: Build (unsigned)
+      - name: Build unsigned iOS app
         run: |
-          xcodebuild -project VXTube.xcodeproj -scheme VXTube \
-            -configuration Release -sdk iphoneos \
+          set -o pipefail
+          mkdir -p build artifacts
+          xcodebuild \
+            -project VXTube.xcodeproj \
+            -scheme VXTube \
+            -configuration Release \
+            -sdk iphoneos \
             -destination 'generic/platform=iOS' \
-            -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
-            build | tee build.log | tail -n 40
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build | tee build/xcodebuild.log
 
       - name: Package IPA
         run: |
-          mkdir -p Payload
-          cp -R build/Build/Products/Release-iphoneos/VXTube.app Payload/
-          zip -qr Flow.ipa Payload
+          mkdir -p artifacts Payload
+          APP_PATH="build/DerivedData/Build/Products/Release-iphoneos/VXTube.app"
+          test -d "$APP_PATH"
+          cp -R "$APP_PATH" Payload/
+          zip -qry artifacts/VXTube.ipa Payload
+          cp build/xcodebuild.log artifacts/xcodebuild.log
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: Flow-ipa
-          path: Flow.ipa
-
-      - uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: build-log
-          path: build.log
+          name: VXTube-ipa
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 14
