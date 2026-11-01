@@ -9,8 +9,8 @@ enum Gaps {
 }
 
 enum Radii {
-    static let card: CGFloat = 20
-    static let hero: CGFloat = 30
+    static let card: CGFloat = 22
+    static let hero: CGFloat = 32
 }
 
 extension Color {
