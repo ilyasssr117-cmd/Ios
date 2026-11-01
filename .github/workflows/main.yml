@@ -32,7 +32,6 @@ jobs:
         run: |
           xcodebuild -version
           xcodebuild -showsdks
-
       - name: Resolve Swift Package dependencies
         run: xcodebuild -resolvePackageDependencies -project VXTube.xcodeproj -scheme VXTube
 
@@ -43,18 +42,16 @@ jobs:
           xcodebuild \
             -project VXTube.xcodeproj \
             -scheme VXTube \
+            -jobs 1 \
             -configuration Release \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
             -derivedDataPath build/DerivedData \
-            SWIFT_ENABLE_EXPLICIT_MODULES=NO \
-            SWIFT_ENABLE_BATCH_MODE=NO \
             SWIFT_COMPILATION_MODE=incremental \
-            -jobs 2 \
+            SWIFT_ENABLE_BATCH_MODE=NO \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             build | tee build/xcodebuild.log
-
       - name: Package IPA
         run: |
           mkdir -p artifacts Payload
@@ -63,7 +60,6 @@ jobs:
           cp -R "$APP_PATH" Payload/
           zip -qry artifacts/VXTube.ipa Payload
           cp build/xcodebuild.log artifacts/xcodebuild.log
-
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
