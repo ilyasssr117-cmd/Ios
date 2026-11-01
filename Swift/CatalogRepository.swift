@@ -225,7 +225,7 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
     }
 
     func modelProfile(for model: ModelRef) async throws -> ModelProfile {
-        guard let url = URL(string: model.url) else { return ModelProfile(name: model.name) }
+        guard let url = normalizedModelURL(for: model) else { throw URLError(.badURL) }
         let payload = try await loadHTML(url)
         if let profile = parseJSONModelProfile(payload, fallbackName: model.name) { return profile }
         let document = try SwiftSoup.parse(embeddedHTML(in: payload) ?? payload, url.absoluteString)
@@ -487,7 +487,8 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
             video.views = jsonText(row, keys: ["views", "view_count"]) ?? ""
             video.likes = jsonText(row, keys: ["likes", "rating", "like_count"]) ?? ""
             video.category = jsonText(row, keys: ["category", "category_name"]) ?? "Featured"
-            video.streamHeaders = (row["headers"] as? [String: String]) ?? (row["http_headers"] as? [String: String])
+            let headerFields = (row["headers"] as? [String: String]) ?? (row["http_headers"] as? [String: String])
+            video.streamHeaders = headerFields?.map { StreamHeader(name: $0.key, value: $0.value) }
             output.append(video)
         }
         return output
@@ -535,7 +536,8 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         for row in jsonRecords(in: root) {
             guard let name = jsonText(row, keys: ["name", "model_name", "title"]) else { continue }
             let imageRaw = jsonText(row, keys: ["image_url", "avatar", "image", "thumbnail", "photo"])
-            return ModelProfile(name: name, imageURL: imageRaw)
+            return ModelProfile(name: name.isEmpty ? fallbackName : name,
+                                imageURL: imageRaw.flatMap { absolute($0, relativeTo: URL(string: model.url) ?? config.baseURL)?.absoluteString })
         }
         return nil
     }
