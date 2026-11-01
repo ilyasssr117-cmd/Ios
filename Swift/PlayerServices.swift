@@ -267,7 +267,7 @@ struct DefaultPlaybackLauncher: PlaybackLauncher {
                         let fields = customHeaders.reduce(into: [String: String]()) {
                             $0[$1.name] = $1.value
                         }
-                        let merged = (resolved.headers ?? [:]).merging(fields) { _, custom in custom }
+                        let merged = resolved.headers.merging(fields) { _, custom in custom }
                         resolved = PlaybackSource(url: resolved.url, headers: merged)
                     }
                     preparedSource = resolved
