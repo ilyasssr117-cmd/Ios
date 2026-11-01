@@ -43,13 +43,11 @@ jobs:
           xcodebuild \
             -project VXTube.xcodeproj \
             -scheme VXTube \
-            -jobs 1 \
             -configuration Release \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
             -derivedDataPath build/DerivedData \
-            SWIFT_COMPILATION_MODE=incremental \
-            SWIFT_ENABLE_BATCH_MODE=NO \
+            SWIFT_ENABLE_EXPLICIT_MODULES=NO \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             build | tee build/xcodebuild.log
