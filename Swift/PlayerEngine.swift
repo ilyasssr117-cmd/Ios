@@ -43,6 +43,10 @@ func makeStreamAsset(url: URL, headers: [String: String]?) -> AVURLAsset {
 ///   `.readyToPlay` racing a timeout.
 /// - The serialized native-disposal queue (`_pendingDisposals`) is not needed:
 ///   `replaceCurrentItem(with: nil)` is synchronous on AVFoundation.
+#if DEBUG
+private let playerLogger = Logger(subsystem: "VXTube", category: "player")
+#endif
+
 @MainActor @Observable
 final class PlayerEngine {
     private(set) var isReady = false
@@ -57,7 +61,6 @@ final class PlayerEngine {
     private(set) var videoSize: CGSize = .zero
 
     @ObservationIgnored let player = AVPlayer()
-    @ObservationIgnored private let logger = Logger(subsystem: "com.vxtube.app", category: "Playback")
     @ObservationIgnored private var itemBag = Set<AnyCancellable>()
     @ObservationIgnored private var playerBag = Set<AnyCancellable>()
     @ObservationIgnored private var timeObserver: Any?
@@ -99,7 +102,7 @@ final class PlayerEngine {
     struct LoadTimeout: Error {}
 
     /// Loads and waits until the item is ready to play (or throws).
-    func load(url: URL, headers: [String: String]?, timeout: Duration = .seconds(30)) async throws {
+    func load(url: URL, headers: [String: String]?, timeout: Duration = .seconds(15)) async throws {
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
         try? AVAudioSession.sharedInstance().setActive(true)
 
@@ -115,6 +118,9 @@ final class PlayerEngine {
         // Flutter's Referer/User-Agent/Cookie/Authorization context is attached
         // to the native asset here, including AVURLAssetHTTPCookiesKey.
         let asset = makeStreamAsset(url: url, headers: headers)
+#if DEBUG
+        playerLogger.debug("Loading stream: \(url.absoluteString, privacy: .private(mask: .hash)) headers=\(Array((headers ?? [:]).keys).sorted().joined(separator: ","), privacy: .public)")
+#endif
         let item = AVPlayerItem(asset: asset)
         item.preferredForwardBufferDuration = 8
         player.replaceCurrentItem(with: item)
@@ -123,10 +129,16 @@ final class PlayerEngine {
             group.addTask { @MainActor in
                 for await status in item.publisher(for: \.status).values {
                     switch status {
-                    case .readyToPlay: return
+                    case .readyToPlay:
+#if DEBUG
+                        playerLogger.debug("AVPlayerItem readyToPlay")
+#endif
+                        return
                     case .failed:
                         let error = item.error ?? URLError(.cannotParseResponse)
-                        self.logger.error("AVPlayerItem failed to become ready: \(error.localizedDescription, privacy: .public)")
+#if DEBUG
+                        playerLogger.error("AVPlayerItem failed: \(error.localizedDescription, privacy: .public) log=\(item.errorLog()?.events.map { String(describing: $0.errorComment) }.joined(separator: " | ") ?? "none", privacy: .public)")
+#endif
                         throw error
                     default: continue
                     }
@@ -158,7 +170,9 @@ final class PlayerEngine {
                     self.hasError = true
                     let error = item.error ?? URLError(.cannotDecodeContentData)
                     self.errorDescription = error.localizedDescription
-                    self.logger.error("AVPlayerItem entered failed status: \(error.localizedDescription, privacy: .public)")
+#if DEBUG
+                    playerLogger.error("AVPlayerItem entered failed status: \(error.localizedDescription, privacy: .public) log=\(item.errorLog()?.events.map { String(describing: $0.errorComment) }.joined(separator: " | ") ?? "none", privacy: .public)")
+#endif
                 }
             }
             .store(in: &itemBag)
@@ -172,7 +186,9 @@ final class PlayerEngine {
                     let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
                         ?? item.error ?? URLError(.cannotDecodeContentData)
                     self.errorDescription = error.localizedDescription
-                    self.logger.error("Playback failed before reaching the end: \(error.localizedDescription, privacy: .public)")
+#if DEBUG
+                    playerLogger.error("Playback failed before reaching the end: \(error.localizedDescription, privacy: .public) log=\(item.errorLog()?.events.map { String(describing: $0.errorComment) }.joined(separator: " | ") ?? "none", privacy: .public)")
+#endif
                 }
             }
             .store(in: &itemBag)

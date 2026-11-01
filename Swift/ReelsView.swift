@@ -16,6 +16,8 @@ import AVFoundation
 ///   bar (the Flutter app left via its swipe pager, which no longer exists).
 struct ReelsView: View {
     @State private var vm: ReelsViewModel
+    @State private var controlsHidden = false
+    @State private var autoHideTask: Task<Void, Never>?
     let isActive: Bool
     let onExit: () -> Void
     @Environment(\.scenePhase) private var scenePhase
@@ -55,6 +57,9 @@ struct ReelsView: View {
                     .padding(.top, top + 8)
                     .padding(.horizontal, 10)
                     .frame(maxHeight: .infinity, alignment: .top)
+                    .opacity(vm.isClear || controlsHidden ? 0 : 1)
+                    .allowsHitTesting(!vm.isClear && !controlsHidden)
+                    .animation(.easeOut(duration: 0.22), value: controlsHidden)
                     .zIndex(20)
             }
         }
@@ -76,6 +81,32 @@ struct ReelsView: View {
         .onAppear { vm.setActive(isActive) }
         .onChange(of: isActive) { _, active in vm.setActive(active) }
         .onChange(of: scenePhase) { _, phase in vm.scenePhaseChanged(phase) }
+        .onChange(of: vm.currentID) { _, _ in scheduleAutoHide() }
+        .onChange(of: currentReelPlaying) { _, playing in if playing { scheduleAutoHide() } else { controlsHidden = false } }
+        .onChange(of: vm.isClear) { _, isClear in if !isClear { scheduleAutoHide() } }
+        .onDisappear { autoHideTask?.cancel() }
+    }
+
+    private var currentReelPlaying: Bool {
+        guard let id = vm.currentID else { return false }
+        return vm.players[id]?.isPlaying ?? false
+    }
+
+    private func scheduleAutoHide() {
+        autoHideTask?.cancel()
+        controlsHidden = false
+        guard currentReelPlaying, !vm.isClear else { return }
+        autoHideTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled, currentReelPlaying else { return }
+            controlsHidden = true
+        }
+    }
+
+    private func revealControls() {
+        autoHideTask?.cancel()
+        controlsHidden = false
+        scheduleAutoHide()
     }
 
     @ViewBuilder
@@ -85,7 +116,8 @@ struct ReelsView: View {
             ScrollView(.vertical) {
                 LazyVStack(spacing: 0) {
                     ForEach(vm.items) { item in
-                        ReelPageView(item: item, vm: vm, topInset: topInset, bottomInset: bottom)
+                        ReelPageView(item: item, vm: vm, topInset: topInset, bottomInset: bottom,
+                                     onPlaybackTap: revealControls)
                             .containerRelativeFrame([.horizontal, .vertical])
                             .id(item.id)
                     }
@@ -209,6 +241,7 @@ struct ReelPageView: View {
     let vm: ReelsViewModel
     let topInset: CGFloat
     let bottomInset: CGFloat
+    let onPlaybackTap: () -> Void
 
     private static let skipZone: CGFloat = 0.18
 
@@ -360,6 +393,7 @@ struct ReelPageView: View {
     // MARK: Gesture handling
 
     private func handleSingleTap(player: ReelPlayer?, isActive: Bool) {
+        onPlaybackTap()
         guard isActive, !holdSuppressesTap, let player, player.state == .ready else { return }
         Haptics.play(.selection)
         player.togglePlay()
@@ -635,7 +669,7 @@ private struct ActionRail: View {
         let liked = vm.isLiked(item)
         VStack(spacing: 18) {
             RailButton(systemImage: liked ? "heart.fill" : "heart",
-                       tint: liked ? .vxAccent : .white, size: 33,
+                       tint: liked ? .vxAccent : .white, size: 24,
                        label: reelCompact(item.likes), popTrigger: liked, haptic: nil) {
                 vm.toggleLike(item)
             }
@@ -671,7 +705,7 @@ private struct ActionRail: View {
 private struct RailButton: View {
     let systemImage: String
     var tint: Color = .white
-    var size: CGFloat = 29
+    var size: CGFloat = 23
     let label: String
     var progress: Double?
     var popTrigger: Bool?
@@ -692,18 +726,18 @@ private struct RailButton: View {
                         .shadow(color: .black.opacity(0.5), radius: 7)
                         .symbolEffect(.bounce, value: popTrigger ?? false)
                 }
-                .frame(width: 46, height: 46)
+                .frame(width: 40, height: 40)
                 .background(.ultraThinMaterial, in: Circle())
                 .overlay(Circle().fill(Color.black.opacity(0.13)))
                 .overlay(Circle().strokeBorder(.white.opacity(0.20), lineWidth: 0.8))
 
                 Text(label)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .lineLimit(1)
                     .foregroundStyle(.white)
                     .shadow(color: .black.opacity(0.6), radius: 5)
             }
-            .frame(width: 58)
+            .frame(width: 50)
             .contentShape(Rectangle())
         }
         .buttonStyle(PressableButtonStyle(scale: 0.86))

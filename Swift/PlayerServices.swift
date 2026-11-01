@@ -45,7 +45,7 @@ final class AppSettings {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        themeMode = AppThemeMode(rawValue: defaults.string(forKey: themeKey) ?? "dark") ?? .dark
+        themeMode = AppThemeMode(rawValue: defaults.string(forKey: themeKey) ?? "system") ?? .system
         autoplayNext = defaults.object(forKey: autoplayKey) as? Bool ?? true
         preferredQuality = defaults.object(forKey: qualityKey) as? Int ?? 0
         previewSound = defaults.object(forKey: previewKey) as? Bool ?? true

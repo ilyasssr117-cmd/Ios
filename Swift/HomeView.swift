@@ -1,1 +1,599 @@
-YªçŠx-®éÜj×¢ëiºÚ+Š§j[h‘éÜ¢éíó^öN‹Z–‹­¦ëeŠw¬Õ¥µÁ½ÉÐMÝ¥™ÑU$4)¥µÁ½ÉÐ=‰Í•ÉÙ…Ñ¥½¸4(4(¼¼5I,è€´I½ÕÑ•È4(4)•¹Õ´ÁÁQ…ˆè!…Í¡…‰±”°…Í•%Ñ•É…‰±”ì4(€€€…Í”¡½µ”°Í•…É °É••±Ì°±¥‰É…Éä°Í•ÑÑ¥¹Ì4)ô4(4)•¹Õ´ÁÁM•Ñ¥½¸è%¹Ð°!…Í¡…‰±”°…Í•%Ñ•É…‰±”ì4(€€€…Í”¡½µ”°±¥‰É…Éä°Í•ÑÑ¥¹Ì4)ô4(4)•¹Õ´1¥‰É…ÉåM•µ•¹ÐèMÑÉ¥¹œ°!…Í¡…‰±”°…Í•%Ñ•É…‰±”ì…Í”‘½Ý¹±½…‘Ì°™…Ù½É¥Ñ•Ì°¡¥ÍÑ½Éä°µ½‘•±Ì°…±‰ÕµÌô4(4)ÍÑÉÕÐ1¥‰É…ÉåI•ÅÕ•ÍÐèÅÕ…Ñ…‰±”ì±•ÐÍ•µ•¹Ðè1¥‰É…ÉåM•µ•¹Ðì±•ÐÑ½­•¸è%¹Ðô4)ÍÑÉÕÐ•Ñ…¥±ÍI½ÕÑ”è!…Í¡…‰±”ì±•ÐÙ¥‘•¼èY¥‘•¼ì±•ÐÅÕ•Õ”èmY¥‘•½tô4(4(¼¼¼½½É‘¥¹…Ñ•ÌÑ¡”Ñ¡É•”ÍÝ¥Á•…‰±”É½½ÐÍ•Ñ¥½¹Ì…¹Ñ¡”ÑÝ¼µ½‘…°‘•ÍÑ¥¹…Ñ¥½¹Ì¸4)5…¥¹Ñ½È=‰Í•ÉÙ…‰±”4)™¥¹…°±…ÍÌÁÁI½ÕÑ•Èì4(€€€Ù…ÈÍ•±•Ñ¥½¸èÁÁQ…ˆ€ô€¹¡½µ”4(€€€Ù…ÈÍ•Ñ¥½¸èÁÁM•Ñ¥½¸€ô€¹¡½µ”4(€€€Ù…È¥ÍM•…É¡AÉ•Í•¹Ñ•€ô™…±Í”4(€€€Ù…È¥ÍI••±ÍAÉ•Í•¹Ñ•€ô™…±Í”4(€€€Ù…È±¥‰É…ÉåI•ÅÕ•ÍÐè1¥‰É…ÉåI•ÅÕ•ÍÐü4(€€€Ù…ÈÁ…Ñ èm•Ñ…¥±ÍI½ÕÑ•t€ômt4(€€€Ù…ÈÍ•±•Ñ•‘5½‘•°è5½‘•±I•˜ü4(€€€ÁÉ¥Ù…Ñ”Ù…ÈÑ½­•¸€ô€À4(4(€€€™Õ¹ŒÍ•±•Ð¡|Ñ…ˆèÁÁQ…ˆ¤ì4(€€€€€€€ÍÝ¥Ñ Ñ…ˆì4(€€€€€€€…Í”€¹¡½µ”è4(€€€€€€€€€€€Í•Ñ¥½¸€ô€¹¡½µ”4(€€€€€€€€€€€Í•±•Ñ¥½¸€ô€¹¡½µ”4(€€€€€€€…Í”€¹Í•…É è4(€€€€€€€€€€€Í•±•Ñ¥½¸€ô€¹Í•…É 4(€€€€€€€€€€€¥ÍM•…É¡AÉ•Í•¹Ñ•€ôÑÉÕ”4(€€€€€€€…Í”€¹É••±Ìè4(€€€€€€€€€€€Í•±•Ñ¥½¸€ô€¹É••±Ì4(€€€€€€€€€€€¥ÍI••±ÍAÉ•Í•¹Ñ•€ôÑÉÕ”4(€€€€€€€…Í”€¹±¥‰É…Éäè4(€€€€€€€€€€€Í•Ñ¥½¸€ô€¹±¥‰É…Éä4(€€€€€€€€€€€Í•±•Ñ¥½¸€ô€¹±¥‰É…Éä4(€€€€€€€…Í”€¹Í•ÑÑ¥¹Ìè4(€€€€€€€€€€€Í•Ñ¥½¸€ô€¹Í•ÑÑ¥¹Ì4(€€€€€€€€€€€Í•±•Ñ¥½¸€ô€¹Í•ÑÑ¥¹Ì4(€€€€€€€ô4(€€€ô4(4(€€€™Õ¹ŒÉ•ÍÑ½É•½­M•±•Ñ¥½¸ ¤ì4(€€€€€€€ÍÝ¥Ñ Í•Ñ¥½¸ì4(€€€€€€€…Í”€¹¡½µ”èÍ•±•Ñ¥½¸€ô€¹¡½µ”4(€€€€€€€…Í”€¹±¥‰É…ÉäèÍ•±•Ñ¥½¸€ô€¹±¥‰É…Éä4(€€€€€€€…Í”€¹Í•ÑÑ¥¹ÌèÍ•±•Ñ¥½¸€ô€¹Í•ÑÑ¥¹Ì4(€€€€€€€ô4(€€€ô4(4(€€€™Õ¹ŒÍ•Ñ¥½¹¥‘¡…¹”¡|Í•Ñ¥½¸èÁÁM•Ñ¥½¸¤ì4(€€€€€€€Í•±˜¹Í•Ñ¥½¸€ôÍ•Ñ¥½¸4(€€€€€€€ÍÝ¥Ñ Í•Ñ¥½¸ì4(€€€€€€€…Í”€¹¡½µ”èÍ•±•Ñ¥½¸€ô€¹¡½µ”4(€€€€€€€…Í”€¹±¥‰É…ÉäèÍ•±•Ñ¥½¸€ô€¹±¥‰É…Éä4(€€€€€€€…Í”€¹Í•ÑÑ¥¹ÌèÍ•±•Ñ¥½¸€ô€¹Í•ÑÑ¥¹Ì4(€€€€€€€ô4(€€€ô4(4(€€€™Õ¹ŒÍ¡½Ý½Ý¹±½…‘Ì ¤ì4(€€€€€€€Ñ½­•¸€¬ô€Ä4(€€€€€€€±¥‰É…ÉåI•ÅÕ•ÍÐ€ô1¥‰É…ÉåI•ÅÕ•ÍÐ¡Í•µ•¹Ðè€¹‘½Ý¹±½…‘Ì°Ñ½­•¸èÑ½­•¸¤4(€€€€€€€Í•±•Ð ¹±¥‰É…Éä¤4(€€€ô4)ô4(4(¼¼5I,è€´I½½Ð4(4(¼¼¼-••ÁÌÑ¡”½É¥¥¹…°±ÕÑÑ•È¥¹™½Éµ…Ñ¥½¸…É¡¥Ñ•ÑÕÉ”è4(¼¼¼€´!½µ”°1¥‰É…Éä…¹M•ÑÑ¥¹Ì…É”¡½É¥é½¹Ñ…±±äÍÝ¥Á•…‰±”É½½ÐÍ•Ñ¥½¹Ì¸4(¼¼¼€´M•…É ¥ÌÁÉ•Í•¹Ñ•…Ì„±…É”‘É……‰±”Í¡••ÐìI••±ÌÉ•µ…¥¹Ì…¸¥µµ•ÉÍ¥Ù”™Õ±°µÍÉ••¸‘•ÍÑ¥¹…Ñ¥½¸¸4(¼¼¼€´Q¡”½µÁ…Ð™±½…Ñ¥¹œ±…ÍÌ‰…ÈÕÍ•Ì¹…Ñ¥Ù”µ™••±¥¹œÍ•±•Ñ¥½¸¥¹‘¥…Ñ½ÉÌ…¹¡…ÁÑ¥Ì¸4(¼¼¼9…Ñ¥Ù”Q…‰Y¥•ÜÁ…¥¹œÉ•Á±…•ÌÑ¡”µ…¹Õ…±±ä…¹¥µ…Ñ•±ÕÑÑ•ÈÍ•Ñ¥½¸ÍÑ…¬¸4)ÍÑÉÕÐ!½µ•Y¥•ÜèY¥•Üì4(€€€MÑ…Ñ”ÁÉ¥Ù…Ñ”Ù…ÈÙ´è!½µ•Y¥•Ý5½‘•°4(€€€MÑ…Ñ”ÁÉ¥Ù…Ñ”Ù…ÈÉ½ÕÑ•È€ôÁÁI½ÕÑ•È ¤4(€€€ÁÉ¥Ù…Ñ”±•Ð‘•ÁÌèÁÁ•Á•¹‘•¹¥•Ì4(4(€€€¥¹¥Ð¡‘•Á•¹‘•¹¥•ÌèÁÁ•Á•¹‘•¹¥•Ì¤ì4(€€€€€€€‘•ÁÌ€ô‘•Á•¹‘•¹¥•Ì4(€€€€€€€}Ù´€ôMÑ…Ñ”¡¥¹¥Ñ¥…±Y…±Õ”è!½µ•Y¥•Ý5½‘•°¡‘•Á•¹‘•¹¥•Ìè‘•Á•¹‘•¹¥•Ì¤¤4(€€€ô4(4(€€€Ù…È‰½‘äèÍ½µ”Y¥•Üì4(€€€€€€€	¥¹‘…‰±”Ù…ÈÙ´€ôÙ´4(€€€€€€€	¥¹‘…‰±”Ù…ÈÉ½ÕÑ•È€ôÉ½ÕÑ•È4(4(€€€€€€€9…Ù¥…Ñ¥½¹MÑ…¬¡Á…Ñ è€‘É½ÕÑ•È¹Á…Ñ ¤ì4(€€€€€€€€€€€Q…‰Y¥•Ü¡Í•±•Ñ¥½¸è€‘É½ÕÑ•È¹Í•Ñ¥½¸¤ì4(€€€€€€€€€€€€€€€!½µ•MÉ••¸¡Ù´èÙ´°½¹=Á•¸è½Á•¹•Ñ…¥±Ì¤4(€€€€€€€€€€€€€€€€€€€€¹Ñ…œ¡ÁÁM•Ñ¥½¸¹¡½µ”¤4(4(€€€€€€€€€€€€€€€1¥‰É…ÉåY¥•Ü¡É•ÅÕ•ÍÐèÉ½ÕÑ•È¹±¥‰É…ÉåI•ÅÕ•ÍÐ°‘•Á•¹‘•¹¥•Ìè‘•ÁÌ°4(€€€€€€€€€€€€€€€€€€€€€€€€€€€½¹=Á•¸è½Á•¹•Ñ…¥±Ì°4(€€€€€€€€€€€€€€€€€€€€€€€€€€€½¹	É½ÝÍ”èìÉ½ÕÑ•È¹Í•±•Ð ¹¡½µ”¤ô¤4(€€€€€€€€€€€€€€€€€€€€¹Ñ…œ¡ÁÁM•Ñ¥½¸¹±¥‰É…Éä¤4(4(€€€€€€€€€€€€€€€M•ÑÑ¥¹ÍY¥•Ü ¤4(€€€€€€€€€€€€€€€€€€€€¹Ñ…œ¡ÁÁM•Ñ¥½¸¹Í•ÑÑ¥¹Ì¤4(€€€€€€€€€€€ô4(€€€€€€€€€€€€¹Ñ…‰Y¥•ÝMÑå±” ¹Á…”¡¥¹‘•á¥ÍÁ±…å5½‘”è€¹¹•Ù•È¤¤4(€€€€€€€€€€€€¹¥¹‘•áY¥•ÝMÑå±” ¹Á…”¡‰…­É½Õ¹‘¥ÍÁ±…å5½‘”è€¹¹•Ù•È¤¤4(€€€€€€€€€€€€¹‰…­É½Õ¹¡½±½È ¹ÍåÍÑ•µ	…­É½Õ¹¤¤4(€€€€€€€€€€€€¹Í…™•É•…%¹Í•Ð¡•‘”è€¹‰½ÑÑ½´°ÍÁ…¥¹œè€À¤ì4(€€€€€€€€€€€€€€€€¼¼-••ÁÌÍÉ½±°½¹Ñ•¹Ð±•…È½˜Ñ¡”™±½…Ñ¥¹œ±…ÍÌ‘½¬¸4(€€€€€€€€€€€€€€€½±½È¹±•…È¹™É…µ”¡¡•¥¡Ðè€Üà¤¹…•ÍÍ¥‰¥±¥Ñå!¥‘‘•¸¡ÑÉÕ”¤4(€€€€€€€€€€€ô4(€€€€€€€€€€€€¹½Ù•É±…ä¡…±¥¹µ•¹Ðè€¹‰½ÑÑ½´¤ì4(€€€€€€€€€€€€€€€±…ÍÍQ…‰	…È¡Í•±•Ñ¥½¸è€‘É½ÕÑ•È¹Í•±•Ñ¥½¸°½¹M•±•ÐèìÑ…ˆ¥¸4(€€€€€€€€€€€€€€€€€€€AÉ•Ù¥•Ý5…¹…•È¹Í¡…É•¹ÍÑ½Á9½Ü ¤4(€€€€€€€€€€€€€€€€€€€É½ÕÑ•È¹Í•±•Ð¡Ñ…ˆ¤4(€€€€€€€€€€€€€€€ô¤4(€€€€€€€€€€€€€€€€¹Á…‘‘¥¹œ ¹¡½É¥é½¹Ñ…°°€ÄØ¤4(€€€€€€€€€€€€€€€€¹Á…‘‘¥¹œ ¹‰½ÑÑ½´°€à¤4(€€€€€€€€€€€€€€€€¹½Á…¥Ñä¡É½ÕÑ•È¹¥ÍM•…É¡AÉ•Í•¹Ñ•ñðÉ½ÕÑ•È¹¥ÍI••±ÍAÉ•Í•¹Ñ•€ü€À€è€Ä¤4(€€€€€€€€€€€€€€€€¹…±±½ÝÍ!¥ÑQ•ÍÑ¥¹œ …É½ÕÑ•È¹¥ÍM•…É¡AÉ•Í•¹Ñ•€˜˜€…É½ÕÑ•È¹¥ÍI••±ÍAÉ•Í•¹Ñ•¤4(€€€€€€€€€€€€€€€€¹…¹¥µ…Ñ¥½¸ ¹ÍÁÉ¥¹œ¡É•ÍÁ½¹Í”è€À¸ÌÐ°‘…µÁ¥¹É…Ñ¥½¸è€À¸àÐ¤°4(€€€€€€€€€€€€€€€€€€€€€€€€€€Ù…±Õ”èÉ½ÕÑ•È¹Í•±•Ñ¥½¸¤4(€€€€€€€€€€€ô4(€€€€€€€€€€€€¹Ñ½½±‰…È ¹¡¥‘‘•¸°™½Èè€¹¹…Ù¥…Ñ¥½¹	…È¤4(€€€€€€€€€€€€¹¹…Ù¥…Ñ¥½¹•ÍÑ¥¹…Ñ¥½¸¡™½Èè•Ñ…¥±ÍI½ÕÑ”¹Í•±˜¤ìÉ½ÕÑ”¥¸4(€€€€€€€€€€€€€€€Y¥‘•½•Ñ…¥±ÍY¥•Ü¡Ù¥‘•¼èÉ½ÕÑ”¹Ù¥‘•¼°ÅÕ•Õ”èÉ½ÕÑ”¹ÅÕ•Õ”°4(€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€‘•Á•¹‘•¹¥•Ìè‘•ÁÌ°½¹=Á•¹I•±…Ñ•è½Á•¹•Ñ…¥±Ì°4(€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€½¹=Á•¹5½‘•°èìÉ½ÕÑ•È¹Í•±•Ñ•‘5½‘•°€ô€Àô°4(€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€½¹A±…äèìÙ´¹Á±…å•ÉI½ÕÑ”€ô€Àô¤4(€€€€€€€€€€€ô4(€€€€€€€ô4(€€€€€€€€¼¼M•…É ÕÍ•Ì„¹…Ñ¥Ù”‘É……‰±”Í¡••Ð¥¹ÍÑ•…½˜„É¥¥™Õ±°µÍÉ••¸É½ÕÑ”¸4(€€€€€€€€¹Í¡••Ð¡¥ÍAÉ•Í•¹Ñ•è€‘É½ÕÑ•È¹¥ÍM•…É¡AÉ•Í•¹Ñ•°½¹¥Íµ¥ÍÌèì4(€€€€€€€€€€€É½ÕÑ•È¹É•ÍÑ½É•½­M•±•Ñ¥½¸ ¤4(€€€€€€€ô¤ì4(€€€€€€€€€€€9…Ù¥…Ñ¥½¹MÑ…¬ì4(€€€€€€€€€€€€€€€M•…É¡MÉ••¸¡‘•Á•¹‘•¹¥•Ìè‘•ÁÌ°½¹=Á•¸è½Á•¹•Ñ…¥±ÍÉ½µM•…É °½¹±½Í”èì4(€€€€€€€€€€€€€€€€€€€É½ÕÑ•È¹¥ÍM•…É¡AÉ•Í•¹Ñ•€ô™…±Í”4(€€€€€€€€€€€€€€€ô¤4(€€€€€€€€€€€€€€€€¹Ñ½½±‰…È ¹¡¥‘‘•¸°™½Èè€¹¹…Ù¥…Ñ¥½¹	…È¤4(€€€€€€€€€€€ô4(€€€€€€€€€€€€¹Ñ¥¹Ð ¹Ùá•¹Ð¤4(€€€€€€€€€€€€¹ÁÉ•Í•¹Ñ…Ñ¥½¹•Ñ•¹ÑÌ¡l¹±…É•t¤4(€€€€€€€€€€€€¹ÁÉ•Í•¹Ñ…Ñ¥½¹É…%¹‘¥…Ñ½È ¹Ù¥Í¥‰±”¤4(€€€€€€€€€€€€¹ÁÉ•Í•¹Ñ…Ñ¥½¹½É¹•ÉI…‘¥ÕÌ ÌÈ¤4(€€€€€€€€€€€€¹ÁÉ•Í•¹Ñ…Ñ¥½¹½¹Ñ•¹Ñ%¹Ñ•É…Ñ¥½¸ ¹ÍÉ½±±Ì¤4(€€€€€€€ô4(€€€€€€€€¹™Õ±±MÉ••¹½Ù•È¡¥ÍAÉ•Í•¹Ñ•è€‘É½ÕÑ•È¹¥ÍI••±ÍAÉ•Í•¹Ñ•°½¹¥Íµ¥ÍÌèì4(€€€€€€€€€€€É½ÕÑ•È¹É•ÍÑ½É•½­M•±•Ñ¥½¸ ¤4(€€€€€€€ô¤ì4(€€€€€€€€€€€I••±ÍY¥•Ü¡‘•Á•¹‘•¹¥•Ìè‘•ÁÌ°¥ÍÑ¥Ù”èÑÉÕ”°½¹á¥Ðèì4(€€€€€€€€€€€€€€€É½ÕÑ•È¹¥ÍI••±ÍAÉ•Í•¹Ñ•€ô™…±Í”4(€€€€€€€€€€€ô¤4(€€€€€€€ô4(€€€€€€€€¹™Õ±±MÉ••¹½Ù•È¡¥Ñ•´è€‘Ù´¹Á±…å•ÉI½ÕÑ”¤ìA±…å•ÉMÉ••¸¡É½ÕÑ”è€À°‘•Á•¹‘•¹¥•Ìè‘•ÁÌ¤ô4(€€€€€€€€¹Í¡••Ð¡¥Ñ•´è€‘É½ÕÑ•È¹Í•±•Ñ•‘5½‘•°¤ìµ½‘•°¥¸4(€€€€€€€€€€€5½‘•±	É½ÝÍ•ÉY¥•Ü¡µ½‘•°èµ½‘•°°‘•Á•¹‘•¹¥•Ìè‘•ÁÌ°½¹=Á•¸è½Á•¹•Ñ…¥±Ì¤4(€€€€€€€€€€€€€€€€¹ÁÉ•Í•¹Ñ…Ñ¥½¹•Ñ•¹ÑÌ¡l¹±…É•t¤4(€€€€€€€€€€€€€€€€¹ÁÉ•Í•¹Ñ…Ñ¥½¹É…%¹‘¥…Ñ½È ¹Ù¥Í¥‰±”¤4(€€€€€€€€€€€€€€€€¹ÁÉ•Í•¹Ñ…Ñ¥½¹½É¹•ÉI…‘¥ÕÌ ÌÈ¤4(€€€€€€€€€€€€€€€€¹ÁÉ•Í•¹Ñ…Ñ¥½¹½¹Ñ•¹Ñ%¹Ñ•É…Ñ¥½¸ ¹ÍÉ½±±Ì¤4(€€€€€€€ô4(€€€€€€€€¹½Ù•É±…ä¡…±¥¹µ•¹Ðè€¹‰½ÑÑ½´¤ì4(€€€€€€€€€€€¥˜€…É½ÕÑ•È¹¥ÍM•…É¡AÉ•Í•¹Ñ•°€…É½ÕÑ•È¹¥ÍI••±ÍAÉ•Í•¹Ñ•°4(€€€€€€€€€€€€€€5¥¹¥A±…å•È¹Í¡…É•¹Í•ÍÍ¥½¸€„ô¹¥°ì4(€€€€€€€€€€€€€€€5¥¹¥A±…å•É	…Èì4(€€€€€€€€€€€€€€€€€€€¥˜±•ÐÍ•ÍÍ¥½¸€ô5¥¹¥A±…å•È¹Í¡…É•¹É•±•…Í” ¤ì4(€€€€€€€€€€€€€€€€€€€€€€€Ù´¹Á±…å•ÉI½ÕÑ”€ô•™…Õ±ÑA±…å‰…­1…Õ¹¡•È¹É½ÕÑ”¡…‘½ÁÑ¥¹œèÍ•ÍÍ¥½¸¤4(€€€€€€€€€€€€€€€€€€€ô4(€€€€€€€€€€€€€€€ô4(€€€€€€€€€€€€€€€€¹Á…‘‘¥¹œ ¹¡½É¥é½¹Ñ…°°€ÄØ¤4(€€€€€€€€€€€€€€€€¹Á…‘‘¥¹œ ¹‰½ÑÑ½´°€äÈ¤4(€€€€€€€€€€€€€€€€¹ÑÉ…¹Í¥Ñ¥½¸ ¹µ½Ù”¡•‘”è€¹‰½ÑÑ½´¤¹½µ‰¥¹•¡Ý¥Ñ è€¹½Á…¥Ñä¤¤4(€€€€€€€€€€€ô4(€€€€€€€ô4(€€€€€€€€¹½¹¡…¹”¡½˜èÉ½ÕÑ•È¹Í•Ñ¥½¸¤ì|°Í•Ñ¥½¸¥¸4(€€€€€€€€€€€AÉ•Ù¥•Ý5…¹…•È¹Í¡…É•¹ÍÑ½Á9½Ü ¤4(€€€€€€€€€€€É½ÕÑ•È¹Í•Ñ¥½¹¥‘¡…¹”¡Í•Ñ¥½¸¤4(€€€€€€€ô4(€€€€€€€€¹½¹ÁÁ•…Èì4(€€€€€€€€€€€A¥A½½É‘¥¹…Ñ½È¹Í¡…É•¹½¹I•ÍÑ½É”€ôìÍ•ÍÍ¥½¸¥¸4(€€€€€€€€€€€€€€€Ù´¹Á±…å•ÉI½ÕÑ”€ô•™…Õ±ÑA±…å‰…­1…Õ¹¡•È¹É½ÕÑ”¡…‘½ÁÑ¥¹œèÍ•ÍÍ¥½¸¤4(€€€€€€€€€€€ô4(€€€€€€€ô4(€€€€€€€€¹•¹Ù¥É½¹µ•¹Ð¡É½ÕÑ•È¤4(€€€€€€€€¹•¹Ù¥É½¹µ•¹Ð¡‘•ÁÌ¹ÁÉ½É•ÍÌ¤4(€€€€€€€€¹•¹Ù¥É½¹µ•¹Ð¡‘•ÁÌ¹™…Ù½É¥Ñ•Ì¤4(€€€€€€€€¹•¹Ù¥É½¹µ•¹Ð¡‘•ÁÌ¹¡¥ÍÑ½Éä¤4(€€€€€€€€¹•¹Ù¥É½¹µ•¹Ð¡‘•ÁÌ¹‘½Ý¹±½…‘Ì¤4(€€€€€€€€¹•¹Ù¥É½¹µ•¹Ð¡AÉ•Ù¥•Ý5…¹…•È¹Í¡…É•¤4(€€€ô4(4(€€€ÁÉ¥Ù…Ñ”™Õ¹Œ½Á•¹•Ñ…¥±Ì¡|Ù¥‘•¼èY¥‘•¼°ÅÕ•Õ”èmY¥‘•½t¤ì4(€€€€€€€¥˜Ù¥‘•¼¹¥ÍM…Ù•‘I••°ì4(€€€€€€€€€€€Q…Í¬ì…Ý…¥ÐÙ´¹½Á•¹M…Ù•‘I••°¡Ù¥‘•¼¤ô4(€€€€€€€ô•±Í”ì4(€€€€€€€€€€€AÉ•Ù¥•Ý5…¹…•È¹Í¡…É•¹ÍÑ½Á9½Ü ¤4(€€€€€€€€€€€É½ÕÑ•È¹Á…Ñ ¹…ÁÁ•¹¡•Ñ…¥±ÍI½ÕÑ”¡Ù¥‘•¼èÙ¥‘•¼°ÅÕ•Õ”èÅÕ•Õ”¤¤4(€€€€€€€ô4(€€€ô4(4(€€€ÁÉ¥Ù…Ñ”™Õ¹Œ½Á•¹•Ñ…¥±ÍÉ½µM•…É ¡|Ù¥‘•¼èY¥‘•¼°ÅÕ•Õ”èmY¥‘•½t¤ì4(€€€€€€€É½ÕÑ•È¹¥ÍM•…É¡AÉ•Í•¹Ñ•€ô™…±Í”4(€€€€€€€Q…Í¬ì5…¥¹Ñ½È¥¸4(€€€€€€€€€€€ÑÉäü…Ý…¥ÐQ…Í¬¹Í±••À¡™½Èè€¹µ¥±±¥Í•½¹‘Ì ÌÈÀ¤¤4(€€€€€€€€€€€¥˜Ù¥‘•¼¹¥ÍM…Ù•‘I••°ì4(€€€€€€€€€€€€€€€…Ý…¥ÐÙ´¹½Á•¹M…Ù•‘I••°¡Ù¥‘•¼¤4(€€€€€€€€€€€ô•±Í”ì4(€€€€€€€€€€€€€€€É½ÕÑ•È¹Á…Ñ ¹…ÁÁ•¹¡•Ñ…¥±ÍI½ÕÑ”¡Ù¥‘•¼èÙ¥‘•¼°ÅÕ•Õ”èÅÕ•Õ”¤¤4(€€€€€€€€€€€ô4(€€€€€€€ô4(€€€ô4)ô4(4(¼¼5I,è€´±½…Ñ¥¹œ±…ÍÌ¹…Ù¥…Ñ¥½¸4(4)ÁÉ¥Ù…Ñ”ÍÑÉÕÐ±…ÍÍQ…‰	…ÈèY¥•Üì4(€€€	¥¹‘¥¹œÙ…ÈÍ•±•Ñ¥½¸èÁÁQ…ˆ4(€€€±•Ð½¹M•±•Ðè€¡ÁÁQ…ˆ¤€´øY½¥4(€€€9…µ•ÍÁ…”ÁÉ¥Ù…Ñ”Ù…ÈÍ•±•Ñ¥½¹5½Ñ¥½¸4(4(€€€ÁÉ¥Ù…Ñ”ÍÑÉÕÐ%Ñ•´è%‘•¹Ñ¥™¥…‰±”ì4(€€€€€€€±•ÐÑ…ˆèÁÁQ…ˆ4(€€€€€€€±•ÐÑ¥Ñ±”èMÑÉ¥¹œ4(€€€€€€€±•ÐÍåµ‰½°èMÑÉ¥¹œ4(€€€€€€€Ù…È¥èÁÁQ…ˆìÑ…ˆô4(€€€ô4(4(€€€ÁÉ¥Ù…Ñ”±•Ð¥Ñ•µÌèm%Ñ•µt€ôl4(€€€€€€€%Ñ•´¡Ñ…ˆè€¹¡½µ”°Ñ¥Ñ±”è€‰!½µ”ˆ°Íåµ‰½°è€‰¡½ÕÍ”ˆ¤°4(€€€€€€€%Ñ•´¡Ñ…ˆè€¹Í•…É °Ñ¥Ñ±”è€‰M•…É ˆ°Íåµ‰½°è€‰µ…¹¥™å¥¹±…ÍÌˆ¤°4(€€€€€€€%Ñ•´¡Ñ…ˆè€¹É••±Ì°Ñ¥Ñ±”è€‰I••±Ìˆ°Íåµ‰½°è€‰Á±…ä¹É•Ñ…¹±”ˆ¤°4(€€€€€€€%Ñ•´¡Ñ…ˆè€¹±¥‰É…Éä°Ñ¥Ñ±”è€‰1¥‰É…Éäˆ°Íåµ‰½°è€‰ÍÅÕ…É”¹ÍÑ…¬ˆ¤°4(€€€€€€€%Ñ•´¡Ñ…ˆè€¹Í•ÑÑ¥¹Ì°Ñ¥Ñ±”è€‰M•ÑÑ¥¹Ìˆ°Íçm{ÚÚ$z{-®éÜj×Ã¢W'&÷"æöffÆ–æRbbfÒæ†46ö×ÆWFVDF÷væÆöG2ò$÷VâF÷væÆöG2"¢æ–ÂÀÐ¢6V6öæF'”7F–öã¢&÷WFW"ç6†÷tF÷væÆöG0Ð¢Ð¢ÒVÇ6R–bfÒçf–FV÷2æ—4V×G’°Ð¢7FGW5f–Wr€Ð¢7—7FVÔ–ÖvS¢'f–FVòç6Æ6‚"ÂF—FÆS¢$æòf–FV÷2f÷VæB"ÀÐ¢ÖW76vS¢fÒæ6FVv÷'’ÓÒ$ÆÂ Ð¢ò%F†W&R—2æ÷F†–ærFò6†÷r&–v‡Bæ÷râ Ð¢¢%F†W&R&Ræòf–FV÷2–â(	ÅÂ‡fÒæ6FVv÷'’ž(	Ò–WBâ"ÀÐ¢7F–öäÆ&VÃ¢%&Vg&W6‚"Â7F–öã¢²F6²²v—BfÒæÆöEvR‡&W6WC¢G'VR’ÒÐÐ¢Ð¢ÒVÇ6R°Ð¢Æ§•dw&–B†6öÇVÖç3¢6öÇVÖç2Â76–æs¢v2æÆr’°Ð¢f÷$V6‚‡fÒæw&–Ef–FV÷2’²f–FVò–àÐ¢f–FVô6&B‡f–FVó¢f–FVò’²öä÷Vâ‡f–FVòÂfÒçf–FV÷2’ÐÐ¢æöäV"²fÒæÆöDÖ÷&T–dæVVFVB†7W'&VçC¢f–FVò’ÐÐ¢ÐÐ¢ÐÐ¢çFF–ær‚æ†÷&—¦öçFÂÂÖ&v–âÐ Ð¢–bfÒæ—4ÆöF–ær°Ð¢&öw&W75f–Wr‚’æg&ÖR†Ö…v–GFƒ¢æ–æf–æ—G’’çFF–ær‚çF÷Âv2æÆrÐ¢ÐÐ¢–bfÒæW'&÷"Òæ–Â°Ð¢'WGFöâ°Ð¢F6²²v—BfÒæÆöEvR‚’ÐÐ¢ÒÆ&VÃ¢°Ð¢Æ&VÂ‚$6÷VÆFî(	—BÆöBÖ÷&R(	2&WG'’"Â7—7FVÔ–ÖvS¢&'&÷ræ6Æö6·v—6R"Ð¢ÐÐ¢æ'WGFöå7G–ÆR‚æ&÷&FW&VBÐ¢æg&ÖR†Ö…v–GFƒ¢æ–æf–æ—G’Ð¢çFF–ær‚çF÷Âv2æÆrÐ¢ÐÐ¢ÐÐ¢ÐÐ§ÐÐ Ð¢òòò66ÆW2F†RfVGW&VB6&B6Æ–v‡FÇ’v†–ÆRVÆÆVB7BF†RF÷àÐ§&—fFR7G'V7B†W&õ7G&WF6ƒÄ6öçFVçC¢f–Wsã¢f–Wr°Ð¢ÆWBVÆÃ¢VÆÅ7FFPÐ¢f–Wt'V–ÆFW"ÆWB6öçFVçC¢6öçFVç@Ð Ð¢f"&öG“¢6öÖRf–Wr°Ð¢6öçFVçBç66ÆTVffV7Bƒ²Ö–â‡VÆÂæÖ÷VçBÂ#’ò#CÂæ6†÷#¢æ&÷GFöÒÐ¢ÐÐ§ÐÐ Ð¢òòÔ$³¢Ò†W&ò††öÖUö†W&òæF'BÐ Ð§7G'V7B†öÖT†W&õf–Ws¢f–Wr°Ð¢ÆWBf–FVó¢f–FVóðÐ¢ÆWB—4ÆöF–æs¢&ööÀÐ¢ÆWBÆ”Æ&VÃ¢7G&–æpÐ¢ÆWBÆ”'W7“¢&ööÀÐ¢ÆWBÖ&v–ã¢4tfÆö@Ð¢ÆWBöåÆ“¢‚’Óâfö–@Ð¢ÆWBöäFWF–Ç3¢‚’Óâfö–@Ð Ð¢f"&öG“¢6öÖRf–Wr°Ð¢w&÷W°Ð¢–bf–FVòÓÒæ–Âbb—4ÆöF–ær°Ð¢†W&õF÷&"‚’çFF–ær‚æ†÷&—¦öçFÂÂÖ&v–â’çFF–ær‚æ&÷GFöÒÂv2æÖBÐ¢ÒVÇ6R°Ð¢†W&òçFF–ær‚æ†÷&—¦öçFÂÂÖ&v–â’çFF–ær‚æ&÷GFöÒÂv2ç6ÒÐ¢ÐÐ¢ÐÐ¢çFF–ær‚çF÷Âv2ç6ÒÐ¢ÐÐ Ð¢&—fFRf"†W&ó¢6öÖRf–Wr°Ð¢6öÆ÷"æ6ÆV Ð¢æ6öçF–æW%&VÆF—fTg&ÖR‚çfW'F–6Â’²†V–v‡BÂò–âÖ–â††V–v‡B¢ãCBÂC’ÐÐ¢æ÷fW&Æ’°Ð¢¥7F6²†Æ–væÖVçC¢æ&÷GFöÔÆVF–ær’°Ð¢–bÆWBf–FVò°Ð¢'Gv÷&µf–Wr‡f–FVó¢f–FVòÐ¢ÒVÇ6R°Ð¢Æ–æV$w&F–VçB†6öÆ÷'3¢´6öÆ÷"‡&VC¢ã’Âw&VVã¢ã‚Â&ÇVS¢ãCB’ÀÐ¢6öÆ÷"‡&VC¢ãRÂw&VVã¢ãbÂ&ÇVS¢ã2•ÒÀÐ¢7F'Eö–çC¢çF÷ÆVF–ærÂVæEö–çC¢æ&÷GFöÕG&–Æ–ærÐ¢ÐÐ¢Æ–æV$w&F–VçB€Ð¢7F÷3¢²æ–æ—B†6öÆ÷#¢6öÆ÷"‡&VC¢ãRÂw&VVã¢ãbÂ&ÇVS¢ã2’æ÷6—G’ƒã3’ÂÆö6F–öã¢’ÀÐ¢æ–æ—B†6öÆ÷#¢6öÆ÷"‡&VC¢ãRÂw&VVã¢ãbÂ&ÇVS¢ã2’æ÷6—G’ƒã2’ÂÆö6F–öã¢ã3R’ÀÐ¢æ–æ—B†6öÆ÷#¢6öÆ÷"‡&VC¢ãRÂw&VVã¢ãbÂ&ÇVS¢ã2’æ÷6—G’ƒãƒ‚’ÂÆö6F–öã¢•ÒÀÐ¢7F'Eö–çC¢çF÷ÂVæEö–çC¢æ&÷GFöÒÐ Ð¢†W&õF÷&"‚Ð¢çFF–ærƒbÐ¢æg&ÖR†Ö…v–GFƒ¢æ–æf–æ—G’ÂÖ„†V–v‡C¢æ–æf–æ—G’ÂÆ–væÖVçC¢çF÷ÆVF–ærÐ Ð¢w&÷W°Ð¢–bÆWBf–FVò°Ð¢†W&ôFWF–Ç2‡f–FVó¢f–FVòÂÆ”Æ&VÃ¢Æ”Æ&VÂÂÆ”'W7“¢Æ”'W7’ÀÐ¢öåÆ“¢öåÆ’ÂöäFWF–Ç3¢öäFWF–Ç2Ð¢æ–B‡f–FVòæ–BÐ¢ÒVÇ6R°Ð¢†W&õ6¶VÆWFöâ‚Ð¢ÐÐ¢ÐÐ¢çFF–ærƒ‚Ð¢çG&ç6—F–öâ‚æ÷6—G’Ð¢ÐÐ¢ææ–ÖF–öâ‚æV6T–ä÷WB†GW&F–öã¢ã3"’ÂfÇVS¢f–FVóòæ–BÐ¢ÐÐ¢æ6Æ—6†R…&÷VæFVE&V7FævÆR†6÷&æW%&F—W3¢&F–’æ†W&òÂ7G–ÆS¢æ6öçF–çV÷W2’Ð¢æVçf—&öæÖVçB…Âæ6öÆ÷%66†VÖRÂæF&²’òò†W&ò—2Çv—2öâF&²67&–ÐÐ¢ÐÐ§ÐÐ Ð§&—fFR7G'V7B†W&õF÷&#¢f–Wr°Ð¢f"&öG“¢6öÖRf–Wr°Ð¢òòæF—fRÖFW&–Â¶VW2F†R'&æBÖ&²ÆVv–&ÆRv†–ÆR&W6W'f–ærF†PÐ¢òòÆ—fR'Gv÷&²VæFW&æVF‚Â–ç7FVBöbW6–ærfÆBG&ç6ÇV6VçBf–ÆÂàÐ¢…7F6²‡76–æs¢’’°Ð¢–ÖvR‡7—7FVÔæÖS¢'Æ’æf–ÆÂ"Ð¢æföçB‚ç7—7FVÒ‡6—¦S¢BÂvV–v‡C¢æ&öÆB’Ð¢æf÷&Vw&÷VæE7G–ÆR‚çv†—FRÐ¢æg&ÖR‡v–GFƒ¢3"Â†V–v‡C¢3"Ð¢æ&6¶w&÷VæB€Ð¢6öÆ÷"çg…6ö6–Äw&F–VçBÀÐ¢–ã¢&÷VæFVE&V7FævÆR†6÷&æW%&F—W3¢Â7G–ÆS¢æ6öçF–çV÷W2’Ð¢FW‡B‚%e…ET$R"Ð¢æföçB‚æfö÷Fæ÷FRçvV–v‡B‚æ&Æ6²’Ð¢çG&6¶–ærƒã‚Ð¢æf÷&Vw&÷VæE7G–ÆR‚çv†—FRÐ¢6—&6ÆR‚’æf–ÆÂ„6öÆ÷"çg„66VçB’æg&ÖR‡v–GFƒ¢RÂ†V–v‡C¢RÐ¢ÐÐ¢çFF–ær‚æÆVF–ærÂr’çFF–ær‚çG&–Æ–ærÂ2’çFF–ær‚çfW'F–6ÂÂrÐ¢æ&6¶w&÷VæB‚çVÇG&F†–äÖFW&–ÂÀÐ¢–ã¢&÷VæFVE&V7FævÆR†6÷&æW%&F—W3¢rÂ7G–ÆS¢æ6öçF–çV÷W2’Ð¢æ÷fW&Æ’…&÷VæFVE&V7FævÆR†6÷&æW%&F—W3¢rÂ7G–ÆS¢æ6öçF–çV÷W2Ð¢æf–ÆÂ„6öÆ÷"æ&Æ6²æ÷6—G’ƒã"’’Ð¢æ÷fW&Æ’…&÷VæFVE&V7FævÆR†6÷&æW%&F—W3¢rÂ7G–ÆS¢æ6öçF–çV÷W2Ð¢ç7G&ö¶T&÷&FW"‚çv†—FRæ÷6—G’ƒã#"’ÂÆ–æUv–GFƒ¢ã‚’Ð¢ç6†F÷r†6öÆ÷#¢æ&Æ6²æ÷6—G’ƒãb’Â&F—W3¢BÂ“¢bÐ¢æ66W76–&–Æ—G”VÆVÖVçB†6†–ÆG&Vã¢æ–væ÷&RÐ¢æ66W76–&–Æ—G”Æ&VÂ‚%e…ET$R"Ð¢ÐÐ§ÐÐ Ð§&—fFR7G'V7B†W&ôFWF–Ç3¢f–Wr°Ð¢ÆWBf–FVó¢f–FVðÐ¢ÆWBÆ”Æ&VÃ¢7G&–æpÐ¢ÆWBÆ”'W7“¢&ööÀÐ¢ÆWBöåÆ“¢‚’Óâfö–@Ð¢ÆWBöäFWF–Ç3¢‚’Óâfö–@Ð Ð¢f"&öG“¢6öÖRf–Wr°Ð¢e7F6²†Æ–væÖVçC¢æÆVF–ærÂ76–æs¢v2ç6Ò’°Ð¢…7F6²‡76–æs¢r’°Ð¢6—&6ÆR‚’æf–ÆÂ„6öÆ÷"çg„66VçB’æg&ÖR‡v–GFƒ¢bÂ†V–v‡C¢bÐ¢FW‡B‚$dTEU$TB"Ð¢æföçB‚æ6F–öã"çvV–v‡B‚ç6VÖ–&öÆB’Ð¢çG&6¶–ærƒãRÐ¢æf÷&Vw&÷VæE7G–ÆR„6öÆ÷"çg„66VçBÐ¢ÐÐ¢FW‡B‡f–FVòçF—FÆRÐ¢æföçB‚ç7—7FVÒ‚çF—FÆS"ÂFW6–vã¢ç&÷VæFVB’çvV–v‡B‚æ&öÆB’Ð¢æÆ–æTÆ–Ö—Bƒ"Ð¢æf÷&Vw&÷VæE7G–ÆR‚çv†—FRÐ¢ç6†F÷r†6öÆ÷#¢æ&Æ6²æ÷6—G’ƒãSR’Â&F—W3¢’Â“¢2Ð¢f–FVôÖWFÆ–æR‡f–FVó¢f–FVòÂ6†÷tGW&F–öã¢G'VRÂ6†÷t6FVv÷'“¢G'VRÂöäF&³¢G'VRÐ¢çFF–ær‚æ&÷GFöÒÂv2ç6ÒÐ Ð¢…7F6²‡76–æs¢v2ç6Ò’°Ð¢'WGFöâ†7F–öã¢öåÆ’’°Ð¢–bÆ”'W7’²&öw&W75f–Wr‚’çF–çB‚çv†—FR’ÐÐ¢VÇ6R²Æ&VÂ‡Æ”Æ&VÂÂ7—7FVÔ–ÖvS¢'Æ’æf–ÆÂ"’ÐÐ¢ÐÐ¢æ'WGFöå7G–ÆR‚çÆ–âÐ¢æf÷&Vw&÷VæE7G–ÆR‚çv†—FRÐ¢çFF–ær‚æ†÷&—¦öçFÂÂr’æg&ÖR††V–v‡C¢CBÐ¢æ&6¶w&÷VæB„6öÆ÷"çg…6ö6–Äw&F–VçBÂ–ã¢67VÆR‡7G–ÆS¢æ6öçF–çV÷W2’Ð¢ç6†F÷r†6öÆ÷#¢6öÆ÷"çg„66VçBæ÷6—G’ƒã#‚’Â&F—W3¢"Â“¢RÐ¢æF—6&ÆVB‡Æ”'W7’Ð Ð¢'WGFöâ†7F–öã¢öäFWF–Ç2’²Æ&VÂ‚$FWF–Ç2"Â7—7FVÔ–ÖvS¢&'&÷rçWç&–v‡B"’ÐÐ¢æ'WGFöå7G–ÆR‚çÆ–âÐ¢æf÷&Vw&÷VæE7G–ÆR‚çv†—FRÐ¢çFF–ær‚æ†÷&—¦öçFÂÂb’æg&ÖR††V–v‡C¢CBÐ¢æ&6¶w&÷VæB‚çVÇG&F†–äÖFW&–ÂÂ–ã¢67VÆR‡7G–ÆS¢æ6öçF–çV÷W2’Ð¢æ÷fW&Æ’„67VÆR‚’ç7G&ö¶T&÷&FW"‚çv†—FRæ÷6—G’ƒã#B’ÂÆ–æUv–GFƒ¢ã‚’Ð¢ÐÐ¢æ6öçG&öÅ6—¦R‚æÆ&vRÐ¢æ'WGFöä&÷&FW%6†R‚ç&÷VæFVE&V7FævÆR‡&F—W3¢b’Ð¢ÐÐ¢çFF–ærƒBÐ¢æ&6¶w&÷VæB‚çVÇG&F†–äÖFW&–ÂÂ–ã¢&÷VæFVE&V7FævÆR†6÷&æW%&F—W3¢#BÂ7G–ÆS¢æ6öçF–çV÷W2’Ð¢æ÷fW&Æ’°Ð¢&÷VæFVE&V7FævÆR†6÷&æW%&F—W3¢#BÂ7G–ÆS¢æ6öçF–çV÷W2Ð¢ç7G&ö¶T&÷&FW"‚çv†—FRæ÷6—G’ƒã‚’ÂÆ–æUv–GFƒ¢ã‚Ð¢ÐÐ¢ç6†F÷r†6öÆ÷#¢æ&Æ6²æ÷6—G’ƒãB’Â&F—W3¢‚Â“¢‚Ð¢æg&ÖR†Ö…v–GFƒ¢æ–æf–æ—G’ÂÆ–væÖVçC¢æÆVF–ærÐ¢ÐÐ§ÐÐ Ð§&—fFR7G'V7B†W&õ6¶VÆWFöã¢f–Wr°Ð¢f"&öG“¢6öÖRf–Wr°Ð¢e7F6²†Æ–væÖVçC¢æÆVF–ærÂ76–æs¢v2ç6Ò’°Ð¢FW‡B‚$dTEU$TB"’æföçB‚æ6F–öã"Ð¢FW‡B‚$ÆöF–ærF†RfVGW&VBf–FVòF—FÆR†W&R"’æföçB‚çF—FÆS"çvV–v‡B‚ç6VÖ–&öÆB’Ð¢FW‡B‚%Æ’"Ð¢æföçB‚æ†VFÆ–æR’çFF–ær‚æ†÷&—¦öçFÂÂ#‚’çFF–ær‚çfW'F–6ÂÂ"Ð¢æ&6¶w&÷VæB‚çv†—FRæ÷6—G’ƒã"’Â–ã¢&÷VæFVE&V7FævÆR†6÷&æW%&F—W3¢b’Ð¢ÐÐ¢æf÷&Vw&÷VæE7G–ÆR‚çv†—FRÐ¢ç&VF7FVB‡&V6öã¢çÆ6V†öÆFW"Ð¢çVÇ6–ær‚Ð¢æ66W76–&–Æ—G”Æ&VÂ‚$ÆöF–ærfVGW&VBf–FVò"Ð¢ÐÐ§ÐÐ
+import SwiftUI
+import Observation
+
+// MARK: - Router
+
+enum AppTab: Hashable, CaseIterable {
+    case home, search, reels, library, settings
+}
+
+enum AppSection: Int, Hashable, CaseIterable {
+    case home, library, settings
+}
+
+enum LibrarySegment: String, Hashable, CaseIterable { case favorites, models, history, downloads }
+
+struct LibraryRequest: Equatable { let segment: LibrarySegment; let token: Int }
+struct DetailsRoute: Hashable { let video: Video; let queue: [Video] }
+
+/// Coordinates the three swipeable root sections and the two modal destinations.
+@MainActor @Observable
+final class AppRouter {
+    var selection: AppTab = .home
+    var section: AppSection = .home
+    var isSearchPresented = false
+    var isReelsPresented = false
+    var libraryRequest: LibraryRequest?
+    var path: [DetailsRoute] = []
+    var selectedModel: ModelRef?
+    private var token = 0
+
+    func select(_ tab: AppTab) {
+        switch tab {
+        case .home:
+            section = .home
+            selection = .home
+        case .search:
+            selection = .search
+            isSearchPresented = true
+        case .reels:
+            selection = .reels
+            isReelsPresented = true
+        case .library:
+            section = .library
+            selection = .library
+        case .settings:
+            section = .settings
+            selection = .settings
+        }
+    }
+
+    func restoreDockSelection() {
+        switch section {
+        case .home: selection = .home
+        case .library: selection = .library
+        case .settings: selection = .settings
+        }
+    }
+
+    func sectionDidChange(_ section: AppSection) {
+        self.section = section
+        switch section {
+        case .home: selection = .home
+        case .library: selection = .library
+        case .settings: selection = .settings
+        }
+    }
+
+    func showDownloads() {
+        token += 1
+        libraryRequest = LibraryRequest(segment: .downloads, token: token)
+        select(.library)
+    }
+}
+
+// MARK: - Root
+
+/// Keeps the original Flutter information architecture:
+/// - Home, Library and Settings are horizontally swipeable root sections.
+/// - Search is presented as a large draggable sheet; Reels remains an immersive full-screen destination.
+/// - The compact floating glass bar uses native-feeling selection indicators and haptics.
+/// Native TabView paging replaces the manually animated Flutter section stack.
+struct HomeView: View {
+    @State private var vm: HomeViewModel
+    @State private var router = AppRouter()
+    private let deps: AppDependencies
+
+    init(dependencies: AppDependencies) {
+        deps = dependencies
+        _vm = State(initialValue: HomeViewModel(dependencies: dependencies))
+    }
+
+    var body: some View {
+        @Bindable var vm = vm
+        @Bindable var router = router
+
+        NavigationStack(path: $router.path) {
+            TabView(selection: $router.section) {
+                HomeScreen(vm: vm, onOpen: openDetails)
+                    .tag(AppSection.home)
+
+                LibraryView(request: router.libraryRequest, dependencies: deps,
+                            onOpen: openDetails,
+                            onBrowse: { router.select(.home) })
+                    .tag(AppSection.library)
+
+                SettingsView()
+                    .tag(AppSection.settings)
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .indexViewStyle(.page(backgroundDisplayMode: .never))
+            .background(VXTheme.background)
+            .overlay(alignment: .bottom) {
+                GlassTabBar(selection: $router.selection, onSelect: { tab in
+                    PreviewManager.shared.stopNow()
+                    router.select(tab)
+                })
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+                .opacity(router.isSearchPresented || router.isReelsPresented ? 0 : 1)
+                .allowsHitTesting(!router.isSearchPresented && !router.isReelsPresented)
+                .animation(.spring(response: 0.34, dampingFraction: 0.84),
+                           value: router.selection)
+            }
+            .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(for: DetailsRoute.self) { route in
+                VideoDetailsView(video: route.video, queue: route.queue,
+                                 dependencies: deps, onOpenRelated: openDetails,
+                                 onOpenModel: { router.selectedModel = $0 },
+                                 onPlay: { vm.playerRoute = $0 })
+            }
+        }
+        // Search uses a native draggable sheet instead of a rigid full-screen route.
+        .sheet(isPresented: $router.isSearchPresented, onDismiss: {
+            router.restoreDockSelection()
+        }) {
+            NavigationStack {
+                SearchScreen(dependencies: deps, onOpen: openDetailsFromSearch, onClose: {
+                    router.isSearchPresented = false
+                })
+                .toolbar(.hidden, for: .navigationBar)
+            }
+            .tint(.vxAccent)
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(32)
+            .presentationContentInteraction(.scrolls)
+        }
+        .fullScreenCover(isPresented: $router.isReelsPresented, onDismiss: {
+            router.restoreDockSelection()
+        }) {
+            ReelsView(dependencies: deps, isActive: true, onExit: {
+                router.isReelsPresented = false
+            })
+        }
+        .fullScreenCover(item: $vm.playerRoute) { PlayerScreen(route: $0, dependencies: deps) }
+        .sheet(item: $router.selectedModel) { model in
+            ModelBrowserView(model: model, dependencies: deps, onOpen: openDetails)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(32)
+                .presentationContentInteraction(.scrolls)
+        }
+        .overlay(alignment: .bottom) {
+            if !router.isSearchPresented, !router.isReelsPresented,
+               MiniPlayer.shared.session != nil {
+                MiniPlayerBar {
+                    if let session = MiniPlayer.shared.release() {
+                        vm.playerRoute = DefaultPlaybackLauncher.route(adopting: session)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 92)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .onChange(of: router.section) { _, section in
+            PreviewManager.shared.stopNow()
+            router.sectionDidChange(section)
+        }
+        .onAppear {
+            PiPCoordinator.shared.onRestore = { session in
+                vm.playerRoute = DefaultPlaybackLauncher.route(adopting: session)
+            }
+        }
+        .environment(router)
+        .environment(deps.progress)
+        .environment(deps.favorites)
+        .environment(deps.history)
+        .environment(deps.downloads)
+        .environment(PreviewManager.shared)
+    }
+
+    private func openDetails(_ video: Video, queue: [Video]) {
+        if video.isSavedReel {
+            Task { await vm.openSavedReel(video) }
+        } else {
+            PreviewManager.shared.stopNow()
+            router.path.append(DetailsRoute(video: video, queue: queue))
+        }
+    }
+
+    private func openDetailsFromSearch(_ video: Video, queue: [Video]) {
+        router.isSearchPresented = false
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(320))
+            if video.isSavedReel {
+                await vm.openSavedReel(video)
+            } else {
+                router.path.append(DetailsRoute(video: video, queue: queue))
+            }
+        }
+    }
+}
+
+// MARK: - Floating glass navigation
+
+private struct GlassTabBar: View {
+    @Binding var selection: AppTab
+    let onSelect: (AppTab) -> Void
+    @Namespace private var selectionMotion
+    @State private var itemFrames: [AppTab: CGRect] = [:]
+    @State private var dragTarget: AppTab?
+
+    private var visualSelection: AppTab { dragTarget ?? selection }
+
+    private struct Item: Identifiable {
+        let tab: AppTab
+        let title: String
+        let symbol: String
+        var id: AppTab { tab }
+    }
+
+    private let items: [Item] = [
+        Item(tab: .home, title: "Home", symbol: "house"),
+        Item(tab: .search, title: "Search", symbol: "magnifyingglass"),
+        Item(tab: .reels, title: "Reels", symbol: "play.rectangle"),
+        Item(tab: .library, title: "Library", symbol: "square.stack"),
+        Item(tab: .settings, title: "Settings", symbol: "slider.horizontal.3")
+    ]
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(items) { item in
+                let active = visualSelection == item.tab
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
+                        selection = item.tab
+                    }
+                    onSelect(item.tab)
+                } label: {
+                    VStack(spacing: 3) {
+                        Image(systemName: item.symbol)
+                            .font(.system(size: 18, weight: active ? .semibold : .regular))
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(active ? Color.vxAccent : Color.secondary)
+                            .frame(height: 22)
+                        Circle()
+                            .fill(active ? Color.vxAccent : Color.clear)
+                            .frame(width: 4, height: 4)
+                        Text(item.title)
+                            .font(.system(size: 10, weight: active ? .semibold : .medium))
+                            .foregroundStyle(active ? Color.primary : Color.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 64)
+                    .background {
+                        if active {
+                            RoundedRectangle(cornerRadius: 25, style: .continuous)
+                                .fill(.white.opacity(0.13))
+                                .matchedGeometryEffect(id: "telegram-tab-selection", in: selectionMotion)
+                                .padding(.horizontal, 2)
+                        }
+                    }
+                    .contentShape(RoundedRectangle(cornerRadius: 25, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(item.title)
+                .accessibilityAddTraits(active ? .isSelected : [])
+                .background {
+                    GeometryReader { proxy in
+                        Color.clear.preference(key: TabFramePreferenceKey.self,
+                                               value: [item.tab: proxy.frame(in: .global)])
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 7)
+        .padding(.vertical, 6)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 31, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 31, style: .continuous)
+                .strokeBorder(.white.opacity(0.16), lineWidth: 0.8)
+        }
+        .shadow(color: .black.opacity(0.2), radius: 24, x: 0, y: 9)
+        .frame(height: 76)
+        .accessibilityElement(children: .contain)
+        .onPreferenceChange(TabFramePreferenceKey.self) { itemFrames = $0 }
+        .contentShape(RoundedRectangle(cornerRadius: 31, style: .continuous))
+        .simultaneousGesture(DragGesture(minimumDistance: 0, coordinateSpace: .global)
+            .onChanged { value in
+                guard let target = itemFrames.first(where: { $0.value.contains(value.location) })?.key else { return }
+                if visualSelection != target { Haptics.play(.selection) }
+                withAnimation(.spring(response: 0.23, dampingFraction: 0.78)) { dragTarget = target }
+            }
+            .onEnded { value in
+                let target = itemFrames.first(where: { $0.value.contains(value.location) })?.key ?? dragTarget
+                dragTarget = nil
+                if let target { onSelect(target) }
+            })
+    }
+}
+
+private struct TabFramePreferenceKey: PreferenceKey {
+    static var defaultValue: [AppTab: CGRect] = [:]
+    static func reduce(value: inout [AppTab: CGRect], nextValue: () -> [AppTab: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, newest in newest })
+    }
+}
+
+// MARK: - Home screen
+
+struct HomeScreen: View {
+    @Bindable var vm: HomeViewModel
+    let onOpen: (Video, [Video]) -> Void
+
+    @Environment(AppRouter.self) private var router
+    @Environment(PreviewManager.self) private var preview
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.scenePhase) private var scenePhase
+
+    private var margin: CGFloat { sizeClass == .regular ? 24 : 16 }
+    private var columns: [GridItem] {
+        let count = sizeClass == .regular ? 3 : 2 // videoGridColumns()
+        return Array(repeating: GridItem(.flexible(), spacing: Gaps.md, alignment: .top), count: count)
+    }
+
+    var body: some View {
+        // `CustomScrollView` + slivers -> ScrollView + LazyVStack. The safe-area
+        // top/bottom insets (status bar, tab bar) are handled by the system, so
+        // the manual `safe.top` / `kBottomBarHeight` paddings are gone.
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                HomeHeroView(
+                        video: vm.featured,
+                        isLoading: vm.videos.isEmpty && vm.isLoading,
+                        playLabel: vm.resumeAvailable ? "Resume" : "Play",
+                        playBusy: vm.isPlayingFeatured,
+                        margin: margin,
+                        onPlay: { Task { await vm.playFeatured() } },
+                        onDetails: {
+                            if let featured = vm.featured { onOpen(featured, vm.videos) }
+                        }
+                    )
+
+                ContinueRow(margin: margin) { video in Task { await vm.resume(video) } }
+
+                if vm.categories.count > 1 {
+                    CategoryBar(categories: vm.categories, selected: vm.category,
+                                margin: margin, onSelect: vm.changeCategory)
+                        .padding(.top, Gaps.xs)
+                }
+
+                Text(vm.category == "All" ? "Latest videos" : vm.category)
+                    .font(.headline)
+                    .lineLimit(1)
+                    .padding(.horizontal, margin)
+                    .padding(.vertical, Gaps.md)
+
+                content
+            }
+            .padding(.bottom, 110)
+        }
+        .refreshable { await vm.refresh() }
+        .tint(.white)
+        .onScrollPhaseChange { _, phase in
+            if phase == .interacting { preview.stopNow() }
+        }
+        .background(VXTheme.background)
+        .toast($vm.toast)
+        .task { vm.startIfNeeded() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await vm.probeConnection() } }
+        }
+    }
+
+    // MARK: Content states (_contentSlivers)
+
+    @ViewBuilder private var content: some View {
+        if vm.videos.isEmpty && vm.isLoading {
+            SkeletonGrid(columns: columns).padding(.horizontal, margin)
+        } else if vm.videos.isEmpty, let error = vm.error {
+            StatusView(
+                systemImage: error.systemImage, title: error.title, message: error.message,
+                actionLabel: "Retry", action: { Task { await vm.loadPage(reset: true) } },
+                secondaryLabel: error.offline && vm.hasCompletedDownloads ? "Open downloads" : nil,
+                secondaryAction: router.showDownloads
+            )
+        } else if vm.videos.isEmpty {
+            StatusView(
+                systemImage: "video.slash", title: "No videos found",
+                message: vm.category == "All"
+                    ? "There is nothing to show right now."
+                    : "There are no videos in â€œ\(vm.category)â€ yet.",
+                actionLabel: "Refresh", action: { Task { await vm.loadPage(reset: true) } }
+            )
+        } else {
+            LazyVGrid(columns: columns, spacing: Gaps.lg) {
+                ForEach(vm.gridVideos) { video in
+                    VideoCard(video: video) { onOpen(video, vm.videos) }
+                        .onAppear { vm.loadMoreIfNeeded(current: video) }
+                }
+            }
+            .padding(.horizontal, margin)
+
+            if vm.isLoading {
+                ProgressView().frame(maxWidth: .infinity).padding(.top, Gaps.lg)
+            }
+            if vm.error != nil {
+                Button {
+                    Task { await vm.loadPage() }
+                } label: {
+                    Label("Couldnâ€™t load more â€“ Retry", systemImage: "arrow.clockwise")
+                }
+                .buttonStyle(.bordered)
+                .frame(maxWidth: .infinity)
+                .padding(.top, Gaps.lg)
+            }
+        }
+    }
+}
+
+// MARK: - Hero (home_hero.dart)
+
+struct HomeHeroView: View {
+    let video: Video?
+    let isLoading: Bool
+    let playLabel: String
+    let playBusy: Bool
+    let margin: CGFloat
+    let onPlay: () -> Void
+    let onDetails: () -> Void
+
+    var body: some View {
+        Group {
+            if video == nil && !isLoading {
+                HeroTopBar().padding(.horizontal, margin).padding(.bottom, Gaps.md)
+            } else {
+                hero.padding(.horizontal, margin).padding(.bottom, Gaps.sm)
+            }
+        }
+        .padding(.top, Gaps.sm)
+    }
+
+    private var hero: some View {
+        Color.clear
+            .containerRelativeFrame(.vertical) { height, _ in min(height * 0.44, 410) }
+            .overlay {
+                ZStack(alignment: .bottomLeading) {
+                    if let video {
+                        ArtworkView(video: video)
+                    } else {
+                        LinearGradient(colors: [Color(red: 0.19, green: 0.18, blue: 0.44),
+                                                Color(red: 0.05, green: 0.06, blue: 0.13)],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing)
+                    }
+                    LinearGradient(
+                        stops: [.init(color: Color(red: 0.05, green: 0.06, blue: 0.13).opacity(0.30), location: 0),
+                                .init(color: Color(red: 0.05, green: 0.06, blue: 0.13).opacity(0.03), location: 0.35),
+                                .init(color: Color(red: 0.05, green: 0.06, blue: 0.13).opacity(0.88), location: 1)],
+                        startPoint: .top, endPoint: .bottom)
+
+                    HeroTopBar()
+                        .padding(16)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+
+                    Group {
+                        if let video {
+                            HeroDetails(video: video, playLabel: playLabel, playBusy: playBusy,
+                                        onPlay: onPlay, onDetails: onDetails)
+                                .id(video.id)
+                        } else {
+                            HeroSkeleton()
+                        }
+                    }
+                    .padding(18)
+                    .transition(.opacity)
+                }
+                .animation(.easeInOut(duration: 0.32), value: video?.id)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: Radii.hero, style: .continuous))
+            .environment(\.colorScheme, .dark) // hero is always on a dark scrim
+    }
+}
+
+private struct HeroTopBar: View {
+    var body: some View {
+        // Native material keeps the brand mark legible while preserving the
+        // live artwork underneath, instead of using a flat translucent fill.
+        HStack(spacing: 9) {
+            Image(systemName: "play.fill")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 32, height: 32)
+                .background(
+                    Color.vxSocialGradient,
+                    in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            Text("VXTUBE")
+                .font(.footnote.weight(.black))
+                .tracking(1.8)
+                .foregroundStyle(.white)
+            Circle().fill(Color.vxAccent).frame(width: 5, height: 5)
+        }
+        .padding(.leading, 7).padding(.trailing, 13).padding(.vertical, 7)
+        .background(.ultraThinMaterial,
+                    in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 17, style: .continuous)
+            .fill(Color.black.opacity(0.12)))
+        .overlay(RoundedRectangle(cornerRadius: 17, style: .continuous)
+            .strokeBorder(.white.opacity(0.22), lineWidth: 0.8))
+        .shadow(color: .black.opacity(0.16), radius: 14, y: 6)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("VXTUBE")
+    }
+}
+
+private struct HeroDetails: View {
+    let video: Video
+    let playLabel: String
+    let playBusy: Bool
+    let onPlay: () -> Void
+    let onDetails: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Gaps.sm) {
+            HStack(spacing: 7) {
+                Circle().fill(Color.vxAccent).frame(width: 6, height: 6)
+                Text("FEATURED")
+                    .font(.caption2.weight(.semibold))
+                    .tracking(1.5)
+                    .foregroundStyle(Color.vxAccent)
+            }
+            Text(video.title)
+                .font(.system(.title2, design: .rounded).weight(.bold))
+                .lineLimit(2)
+                .foregroundStyle(.white)
+                .shadow(color: .black.opacity(0.55), radius: 9, y: 3)
+            VideoMetaLine(video: video, showDuration: true, showCategory: true, onDark: true)
+                .padding(.bottom, Gaps.sm)
+
+            HStack(spacing: Gaps.sm) {
+                Button(action: onPlay) {
+                    if playBusy { ProgressView().tint(.white) }
+                    else { Label(playLabel, systemImage: "play.fill") }
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 17).frame(height: 44)
+                .background(Color.vxSocialGradient, in: Capsule(style: .continuous))
+                .shadow(color: Color.vxAccent.opacity(0.28), radius: 12, y: 5)
+                .disabled(playBusy)
+
+                Button(action: onDetails) { Label("Details", systemImage: "arrow.up.right") }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16).frame(height: 44)
+                    .background(.ultraThinMaterial, in: Capsule(style: .continuous))
+                    .overlay(Capsule().strokeBorder(.white.opacity(0.24), lineWidth: 0.8) )
+            }
+            .controlSize(.large)
+            .buttonBorderShape(.roundedRectangle(radius: 16))
+        }
+        .padding(14)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .strokeBorder(.white.opacity(0.18), lineWidth: 0.8)
+        }
+        .shadow(color: .black.opacity(0.14), radius: 18, y: 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct HeroSkeleton: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: Gaps.sm) {
+            Text("FEATURED").font(.caption2)
+            Text("Loading the featured video title here").font(.title2.weight(.semibold))
+            Text("Play")
+                .font(.headline).padding(.horizontal, 28).padding(.vertical, 12)
+                .background(.white.opacity(0.2), in: RoundedRectangle(cornerRadius: 16))
+        }
+        .foregroundStyle(.white)
+        .redacted(reason: .placeholder)
+        .pulsing()
+        .accessibilityLabel("Loading featured video")
+    }
+}
