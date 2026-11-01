@@ -72,10 +72,7 @@ final class ReelPlayer {
         buffered = 0
 
         // Same media headers the Flutter client sent (Referer/Origin/UA).
-        let asset = AVURLAsset(
-            url: url,
-            options: headers.isEmpty ? nil : ["AVURLAssetHTTPHeaderFieldsKey": headers]
-        )
+        let asset = makeStreamAsset(url: url, headers: headers)
         let item = AVPlayerItem(asset: asset)
         item.preferredForwardBufferDuration = 4 // keep the speculative decoder light
 

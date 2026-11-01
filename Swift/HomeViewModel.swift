@@ -168,7 +168,9 @@ final class HomeViewModel {
             guard requestGeneration == generation else { return }
             OfflineListingCache.write(key(refreshed, 0), result)
             var seen = Set<String>()
-            videos = result.filter { seen.insert($0.id).inserted }
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                videos = result.filter { seen.insert($0.id).inserted }
+            }
             page = 1
             emptyPages = 0
             hasMore = !result.isEmpty

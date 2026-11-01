@@ -9,8 +9,8 @@ enum Gaps {
 }
 
 enum Radii {
-    static let card: CGFloat = 20
-    static let hero: CGFloat = 30
+    static let card: CGFloat = 22
+    static let hero: CGFloat = 32
 }
 
 extension Color {
@@ -31,6 +31,11 @@ struct StreamQuality: Codable, Hashable, Sendable {
     let url: String
 }
 
+struct StreamHeader: Codable, Hashable, Sendable {
+    var name: String
+    var value: String
+}
+
 /// Flutter's immutable `Video` + `copyWith` becomes a value-type struct:
 /// copy it into a `var` and mutate the field you need.
 struct Video: Identifiable, Codable, Hashable, Sendable {
@@ -47,6 +52,8 @@ struct Video: Identifiable, Codable, Hashable, Sendable {
     var pageURL: URL?
     var previewURL: URL?
     var qualities: [StreamQuality] = []
+    /// Optional provider-specific headers for direct media URLs (for example Authorization).
+    var streamHeaders: [StreamHeader]? = nil
 
     var isSavedReel: Bool { id.hasPrefix("reel_") }
 

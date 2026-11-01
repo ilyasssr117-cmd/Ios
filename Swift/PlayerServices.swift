@@ -45,7 +45,7 @@ final class AppSettings {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        themeMode = AppThemeMode(rawValue: defaults.string(forKey: themeKey) ?? "system") ?? .system
+        themeMode = AppThemeMode(rawValue: defaults.string(forKey: themeKey) ?? "dark") ?? .dark
         autoplayNext = defaults.object(forKey: autoplayKey) as? Bool ?? true
         preferredQuality = defaults.object(forKey: qualityKey) as? Int ?? 0
         previewSound = defaults.object(forKey: previewKey) as? Bool ?? true
@@ -251,19 +251,40 @@ struct DefaultPlaybackLauncher: PlaybackLauncher {
         do {
             let local = downloads.localPath(for: video.id)?.path
             var playable = video
-            if local == nil, source == nil {
-                // Match Flutter's launchPlayer: do not trust a listing-card
-                // stream/preview. Resolve the actual media URL from its detail page.
-                var bare = video
-                bare.streamURL = ""
-                playable = try await resolver.resolveForPlayback(bare, refresh: false)
+            var preparedSource = source
+
+            if local == nil, preparedSource == nil {
+                if let directURL = directStreamURL(for: video) {
+                    // Preserve a supplied direct stream. AVPlayer receives the
+                    // resolved provider headers through PlaybackSource below.
+                    var resolved = try await resolver.resolveSource(
+                        streamURL: directURL,
+                        pageURL: video.pageURL?.absoluteString,
+                        refresh: false,
+                        preserveURL: true
+                    )
+                    if let customHeaders = video.streamHeaders, !customHeaders.isEmpty {
+                        let fields = customHeaders.reduce(into: [String: String]()) {
+                            $0[$1.name] = $1.value
+                        }
+                        let merged = resolved.headers.merging(fields) { _, custom in custom }
+                        resolved = PlaybackSource(url: resolved.url, headers: merged)
+                    }
+                    preparedSource = resolved
+                } else {
+                    // Listing thumbnails and preview clips are never promoted to playback.
+                    var bare = video
+                    bare.streamURL = ""
+                    playable = try await resolver.resolveForPlayback(bare, refresh: false)
+                }
             }
-            if local == nil, source == nil,
-               playable.streamURL.trimmingCharacters(in: .whitespaces).isEmpty {
+
+            guard local != nil || preparedSource != nil ||
+                    !playable.streamURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 throw PlaybackLaunchError.noLink
             }
             return PlayerRoute(video: playable, startAt: startAt, queue: queue,
-                               localPath: local, initialSource: local == nil ? source : nil, adopted: nil)
+                               localPath: local, initialSource: local == nil ? preparedSource : nil, adopted: nil)
         } catch let error as PlaybackLaunchError {
             throw error
         } catch {
@@ -272,6 +293,19 @@ struct DefaultPlaybackLauncher: PlaybackLauncher {
                 ? "No connection. Check the network and try again."
                 : "Couldn’t prepare this video. Please try again.")
         }
+    }
+
+    private func directStreamURL(for video: Video) -> URL? {
+        let raw = video.streamURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty,
+              raw != video.previewURL?.absoluteString,
+              let url = URL(string: raw),
+              let scheme = url.scheme?.lowercased(),
+              ["http", "https"].contains(scheme),
+              let host = url.host, !host.isEmpty,
+              !["jpg", "jpeg", "png", "gif", "webp", "svg", "html", "htm"].contains(url.pathExtension.lowercased())
+        else { return nil }
+        return url
     }
 
     /// Reopening a session from the mini player / PiP.
