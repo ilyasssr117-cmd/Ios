@@ -227,7 +227,7 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
     func modelProfile(for model: ModelRef) async throws -> ModelProfile {
         guard let url = normalizedModelURL(for: model) else { throw URLError(.badURL) }
         let payload = try await loadHTML(url)
-        if let profile = parseJSONModelProfile(payload, fallbackName: model.name) { return profile }
+        if let profile = parseJSONModelProfile(payload, fallbackName: model.name, baseURL: url) { return profile }
         let document = try SwiftSoup.parse(embeddedHTML(in: payload) ?? payload, url.absoluteString)
         let name = (try? document.select("meta[property=og:title]").first()?.attr("content")) ?? (try? document.select("h1").first()?.text()) ?? model.name
         let image = (try? document.select("meta[property=og:image]").first()?.attr("content")) ?? (try? document.select("meta[name=twitter:image]").first()?.attr("content"))
@@ -531,13 +531,13 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         return output
     }
 
-    private func parseJSONModelProfile(_ text: String, fallbackName: String) -> ModelProfile? {
+    private func parseJSONModelProfile(_ text: String, fallbackName: String, baseURL: URL) -> ModelProfile? {
         guard let root = jsonValue(from: text) else { return nil }
         for row in jsonRecords(in: root) {
             guard let name = jsonText(row, keys: ["name", "model_name", "title"]) else { continue }
             let imageRaw = jsonText(row, keys: ["image_url", "avatar", "image", "thumbnail", "photo"])
             return ModelProfile(name: name.isEmpty ? fallbackName : name,
-                                imageURL: imageRaw.flatMap { absolute($0, relativeTo: URL(string: model.url) ?? config.baseURL)?.absoluteString })
+                                imageURL: imageRaw.flatMap { absolute($0, relativeTo: baseURL)?.absoluteString })
         }
         return nil
     }
