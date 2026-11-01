@@ -494,7 +494,7 @@ struct HomeHeroView: View {
 
     private var hero: some View {
         Color.clear
-            .containerRelativeFrame(.vertical) { height, _ in min(height * 0.48, 450) }
+            .containerRelativeFrame(.vertical) { height, _ in min(height * 0.44, 410) }
             .overlay {
                 ZStack(alignment: .bottomLeading) {
                     if let video {
@@ -507,7 +507,7 @@ struct HomeHeroView: View {
                     LinearGradient(
                         stops: [.init(color: Color(red: 0.05, green: 0.06, blue: 0.13).opacity(0.30), location: 0),
                                 .init(color: Color(red: 0.05, green: 0.06, blue: 0.13).opacity(0.03), location: 0.35),
-                                .init(color: Color(red: 0.05, green: 0.06, blue: 0.13).opacity(0.95), location: 1)],
+                                .init(color: Color(red: 0.05, green: 0.06, blue: 0.13).opacity(0.88), location: 1)],
                         startPoint: .top, endPoint: .bottom)
 
                     HeroTopBar()
@@ -581,7 +581,7 @@ private struct HeroDetails: View {
                     .foregroundStyle(Color.vxAccent)
             }
             Text(video.title)
-                .font(.title2.weight(.semibold))
+                .font(.system(.title2, design: .rounded).weight(.bold))
                 .lineLimit(2)
                 .foregroundStyle(.white)
                 .shadow(color: .black.opacity(0.55), radius: 9, y: 3)
@@ -610,6 +610,13 @@ private struct HeroDetails: View {
             .controlSize(.large)
             .buttonBorderShape(.roundedRectangle(radius: 16))
         }
+        .padding(14)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .strokeBorder(.white.opacity(0.18), lineWidth: 0.8)
+        }
+        .shadow(color: .black.opacity(0.14), radius: 18, y: 8)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
