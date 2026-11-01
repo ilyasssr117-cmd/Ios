@@ -120,7 +120,7 @@ final class ReelPlayer {
 
         // initialize().timeout(28s)
         timeoutTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(28))
+            try? await Task.sleep(for: .seconds(15))
             guard !Task.isCancelled else { return }
             self?.handleFailure()
         }

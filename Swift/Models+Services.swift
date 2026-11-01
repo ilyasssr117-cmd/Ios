@@ -1,5 +1,6 @@
 import SwiftUI
 import Observation
+import UIKit
 
 // MARK: - Design tokens (from app_theme.dart)
 
@@ -10,13 +11,49 @@ enum Gaps {
 
 enum Radii {
     static let card: CGFloat = 22
-    static let hero: CGFloat = 32
+    static let button: CGFloat = 16
+    static let field: CGFloat = 16
+    static let small: CGFloat = 12
+    static let medium: CGFloat = 22
+    static let large: CGFloat = 26
+    static let hero: CGFloat = 28
+}
+
+enum VXTheme {
+    static func adaptive(light: UInt32, dark: UInt32) -> Color {
+        Color(uiColor: UIColor { traits in
+            let hex = traits.userInterfaceStyle == .dark ? dark : light
+            return UIColor(red: CGFloat((hex >> 16) & 0xff) / 255,
+                           green: CGFloat((hex >> 8) & 0xff) / 255,
+                           blue: CGFloat(hex & 0xff) / 255, alpha: 1)
+        })
+    }
+    static let background = adaptive(light: 0xF5F6FF, dark: 0x0C1020)
+    static let surface = adaptive(light: 0xFFFFFF, dark: 0x151B2D)
+    static let surfaceHigh = adaptive(light: 0xE9ECFF, dark: 0x202943)
+    static let textSecondary = adaptive(light: 0x4E5673, dark: 0xBBC4DA)
+    static let textTertiary = adaptive(light: 0x7E87A8, dark: 0x8996B7)
+    static let accentSoft = adaptive(light: 0xE9E9FF, dark: 0x292B55)
+    static let error = adaptive(light: 0xD93025, dark: 0xFF8A80)
+    static let accent = Color(red: 133/255, green: 133/255, blue: 1)
+    static let accentStrong = Color(red: 104/255, green: 117/255, blue: 245/255)
+    static let accentBlue = Color(red: 118/255, green: 149/255, blue: 1)
+    static let accentViolet = Color(red: 154/255, green: 134/255, blue: 1)
+    static let accentIndigo = Color(red: 119/255, green: 126/255, blue: 245/255)
+    static let accentMuted = Color(red: 135/255, green: 149/255, blue: 200/255)
+    static let star = Color(red: 1, green: 200/255, blue: 87/255)
+}
+
+enum VXMotion {
+    static let quick = Duration.milliseconds(120)
+    static let normal = Duration.milliseconds(220)
+    static let fade = Duration.milliseconds(320)
+    static let scroll = Duration.milliseconds(260)
 }
 
 extension Color {
-    /// Modern social-app indigo: vivid on light surfaces, restrained in dark mode.
-    static let vxAccent = Color(red: 0.34, green: 0.39, blue: 0.98)
-    static let vxAccentSecondary = Color(red: 0.55, green: 0.31, blue: 0.96)
+    static let vxAccent = VXTheme.accent
+    static let vxAccentSecondary = VXTheme.accentViolet
     static let vxSocialGradient = LinearGradient(
         colors: [.vxAccent, .vxAccentSecondary],
         startPoint: .topLeading,

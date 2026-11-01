@@ -132,13 +132,9 @@ struct SearchScreen: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Button(action: onClose) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 14, weight: .bold))
-                            .frame(width: 38, height: 38)
-                            .background(.regularMaterial, in: Circle())
-                            .overlay(Circle().strokeBorder(.white.opacity(0.18)))
-                    }
+                    Button("Cancel", action: onClose)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.tint)
                     .buttonStyle(.plain)
                     .accessibilityLabel("Close search")
                 }
@@ -168,28 +164,10 @@ struct SearchScreen: View {
                 .shadow(color: .black.opacity(0.05), radius: 16, y: 6)
                 .padding(.horizontal, 16)
 
-                SearchScopePicker(selection: $vm.scope)
+                SearchFilterBar(scope: $vm.scope, sortBy: $vm.sortBy)
                     .padding(.horizontal, 16)
                     .onChange(of: vm.scope) { _, _ in Task { await vm.search() } }
-
-                if vm.scope == .videos {
-                    HStack {
-                        Label("Sort", systemImage: "arrow.up.arrow.down")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Picker("Sort", selection: $vm.sortBy) {
-                            Text("Relevant").tag("relevant")
-                            Text("Most viewed").tag("views")
-                            Text("Newest").tag("latest")
-                            Text("Top rated").tag("rating")
-                        }
-                        .pickerStyle(.menu)
-                        .tint(.vxAccent)
-                        .onChange(of: vm.sortBy) { _, _ in Task { await vm.search() } }
-                    }
-                    .padding(.horizontal, 20)
-                }
+                    .onChange(of: vm.sortBy) { _, _ in Task { await vm.search() } }
 
                 Group {
                     if vm.isLoading && vm.videos.isEmpty && vm.people.isEmpty {
@@ -210,7 +188,7 @@ struct SearchScreen: View {
             }
             .padding(.bottom, 110)
         }
-        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .background(VXTheme.background.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $selectedModel) { model in ModelBrowserView(model: model, dependencies: dependencies, onOpen: onOpen) }
         .sheet(item: $selectedAlbum) { album in AlbumBrowserView(album: album, dependencies: dependencies) }
@@ -327,29 +305,48 @@ struct SearchScreen: View {
     }
 }
 
-private struct SearchScopePicker: View {
-    @Binding var selection: SearchScope
+private struct SearchFilterBar: View {
+    @Binding var scope: SearchScope
+    @Binding var sortBy: String
     var body: some View {
-        HStack(spacing: 6) {
-            ForEach(SearchScope.allCases) { scope in
-                let selected = selection == scope
-                Button {
-                    Haptics.play(.selection)
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) { selection = scope }
-                } label: {
-                    Text(scope.rawValue)
-                        .font(.subheadline.weight(selected ? .semibold : .medium))
-                        .foregroundStyle(selected ? .primary : .secondary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 40)
-                        .background(selected ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(Color.clear), in: Capsule(style: .continuous))
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(SearchScope.allCases) { value in
+                    let selected = scope == value
+                    Button {
+                        Haptics.play(.selection)
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) { scope = value }
+                    } label: {
+                        Text(value.rawValue)
+                            .font(.subheadline.weight(selected ? .semibold : .medium))
+                            .foregroundStyle(selected ? .primary : .secondary)
+                            .padding(.horizontal, 13).frame(height: 38)
+                            .background(selected ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(.thinMaterial), in: Capsule())
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
+                Rectangle().fill(Color.primary.opacity(0.14)).frame(width: 1, height: 24).padding(.horizontal, 2)
+                if scope == .videos {
+                    filter("Relevant", value: "relevant")
+                    filter("By duration", value: "duration")
+                }
             }
+            .padding(.vertical, 2)
         }
-        .padding(4)
-        .background(.thinMaterial, in: Capsule(style: .continuous))
-        .overlay(Capsule(style: .continuous).strokeBorder(.white.opacity(0.18)))
+    }
+
+    private func filter(_ label: String, value: String) -> some View {
+        let selected = sortBy == value
+        return Button {
+            Haptics.play(.selection)
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) { sortBy = value }
+        } label: {
+            Text(label).font(.subheadline.weight(selected ? .semibold : .medium))
+                .foregroundStyle(selected ? .primary : .secondary)
+                .padding(.horizontal, 13).frame(height: 38)
+                .background(selected ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(.thinMaterial), in: Capsule())
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -399,22 +396,27 @@ struct LibraryView: View {
                 Group {
                     switch segment {
                     case .favorites:
-                        videoList(favorites.items, emptyTitle: "No favorites yet", emptyMessage: "Save videos you want to watch later.")
+                        if favorites.items.isEmpty {
+                            ModernEmptyState(icon: "star.fill", title: "No favorites yet",
+                                             message: "Save videos you want to watch later.",
+                                             actionTitle: "Browse videos", actionIcon: "house.fill", action: onBrowse)
+                                .padding(.top, 44)
+                        } else {
+                            videoList(favorites.items, emptyTitle: "No favorites yet", emptyMessage: "Save videos you want to watch later.")
+                        }
                     case .history:
                         historyList
                     case .downloads:
                         downloadsList
                     case .models:
                         modelsList
-                    case .albums:
-                        albumsList
                     }
                 }
             }
             .padding(.bottom, 110)
         }
         .scrollClipDisabled()
-        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .background(VXTheme.background.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { if let request { segment = request.segment } }
@@ -548,7 +550,7 @@ struct LibraryView: View {
 private struct LibrarySectionPicker: View {
     @Binding var selection: LibrarySegment
     private let icons: [LibrarySegment: String] = [
-        .favorites: "star.fill", .history: "clock", .downloads: "arrow.down.circle.fill", .models: "person.2.fill", .albums: "photo.stack.fill"
+        .favorites: "star.fill", .models: "person.2.fill", .history: "clock", .downloads: "arrow.down.circle.fill"
     ]
 
     var body: some View {
@@ -689,6 +691,7 @@ private struct ModernEmptyState: View {
     let title: String
     let message: String
     var actionTitle: String? = nil
+    var actionIcon: String? = nil
     var action: (() -> Void)? = nil
     var body: some View {
         VStack(spacing: 12) {
@@ -697,11 +700,14 @@ private struct ModernEmptyState: View {
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(.secondary)
                 .frame(width: 58, height: 58)
-                .background(.thinMaterial, in: Circle())
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             Text(title).font(.title3.weight(.semibold))
             Text(message).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center).padding(.horizontal, 28)
             if let actionTitle, let action {
-                Button(actionTitle, action: action)
+                Button(action: action) {
+                    if let actionIcon { Label(actionTitle, systemImage: actionIcon) }
+                    else { Text(actionTitle) }
+                }
                     .buttonStyle(.borderedProminent)
                     .tint(.vxAccent)
                     .controlSize(.large)
@@ -736,6 +742,7 @@ struct SettingsView: View {
     @State private var showingClearDownloads = false
     @State private var showingClearOfflinePhotos = false
     @State private var offlinePhotos = OfflinePhotoAlbumsStore.shared
+    @State private var cacheBytes = URLCache.shared.currentDiskUsage
     @Environment(HistoryStore.self) private var history
     @Environment(PlaybackProgress.self) private var progress
     @Environment(DownloadStore.self) private var downloads
@@ -756,23 +763,27 @@ struct SettingsView: View {
                 .padding(.top, 8)
 
                 SettingsGroup(title: "Appearance", icon: "paintbrush.fill") {
-                    SettingsRow(icon: "circle.lefthalf.filled", title: "Theme") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("Theme", systemImage: "circle.lefthalf.filled")
+                            .font(.body.weight(.medium))
+                            .padding(.horizontal, 15)
                         Picker("Theme", selection: Binding(get: { settings.themeMode }, set: settings.setThemeMode)) {
                             ForEach(AppThemeMode.allCases) { mode in Text(mode.title).tag(mode) }
                         }
-                        .pickerStyle(.menu)
-                        .tint(.vxAccent)
+                        .pickerStyle(.segmented)
+                        .padding(.horizontal, 15)
+                        .padding(.bottom, 12)
                     }
                 }
 
-                SettingsGroup(title: "Playback", icon: "play.circle.fill") {
-                    SettingsToggleRow(icon: "forward.end.fill", title: "Autoplay next video", isOn: Binding(get: { settings.autoplayNext }, set: settings.setAutoplayNext))
+                SettingsGroup(title: "Playback & feedback", icon: "play.circle.fill") {
+                    SettingsToggleRow(icon: "forward.end.fill", title: "Autoplay next video", subtitle: "Continue with the next one when a video ends", isOn: Binding(get: { settings.autoplayNext }, set: settings.setAutoplayNext))
                     SettingsDivider()
-                    SettingsToggleRow(icon: "speaker.wave.2.fill", title: "Preview sound", isOn: Binding(get: { settings.previewSound }, set: settings.setPreviewSound))
+                    SettingsToggleRow(icon: "speaker.wave.2.fill", title: "Preview sound", subtitle: "Enable audio in video previews", isOn: Binding(get: { settings.previewSound }, set: settings.setPreviewSound))
                     SettingsDivider()
-                    SettingsToggleRow(icon: "iphone.radiowaves.left.and.right", title: "Haptic feedback", isOn: Binding(get: { settings.haptics }, set: settings.setHaptics))
+                    SettingsToggleRow(icon: "iphone.radiowaves.left.and.right", title: "Haptic feedback", subtitle: "Use subtle ticks for app actions", isOn: Binding(get: { settings.haptics }, set: settings.setHaptics))
                     SettingsDivider()
-                    SettingsRow(icon: "sparkles.tv.fill", title: "Preferred quality") {
+                    SettingsRow(icon: "sparkles.tv.fill", title: "Preferred quality", subtitle: "Default resolution for playback") {
                         Picker("Quality", selection: Binding(get: { settings.preferredQuality }, set: settings.setPreferredQuality)) {
                             Text("Auto").tag(0); Text("360p").tag(360); Text("480p").tag(480); Text("720p").tag(720); Text("1080p").tag(1080); Text("2160p / 4K").tag(2160)
                         }
@@ -781,15 +792,22 @@ struct SettingsView: View {
                     }
                 }
 
-                SettingsGroup(title: "Storage & privacy", icon: "externaldrive.fill") {
+                SettingsGroup(title: "Storage", icon: "externaldrive.fill") {
                     SettingsValueRow(icon: "arrow.down.circle.fill", title: "Completed downloads", value: "\(downloads.doneCount)")
                     SettingsDivider()
                     SettingsValueRow(icon: "photo.stack.fill", title: "Offline photo albums", value: "\(offlinePhotos.albums.count) · \(offlinePhotos.totalPhotos)")
                     SettingsDivider()
-                    SettingsActionRow(title: "Delete all downloads", role: .destructive) { showingClearDownloads = true }.disabled(downloads.items.isEmpty)
+                    SettingsActionRow(title: "Clear cache (\(String(format: "%.1f MB", Double(cacheBytes) / 1_048_576)))") {
+                        URLCache.shared.removeAllCachedResponses()
+                        cacheBytes = URLCache.shared.currentDiskUsage
+                    }
+                    SettingsDivider()
+                    SettingsActionRow(title: downloads.items.isEmpty ? "Delete all downloads · Nothing saved" : "Delete all downloads", role: .destructive) { showingClearDownloads = true }.disabled(downloads.items.isEmpty)
                     SettingsDivider()
                     SettingsActionRow(title: "Delete offline photo albums", role: .destructive) { showingClearOfflinePhotos = true }.disabled(offlinePhotos.albums.isEmpty)
-                    SettingsDivider()
+                }
+
+                SettingsGroup(title: "Privacy", icon: "hand.raised.fill") {
                     SettingsActionRow(title: "Clear watch history", role: .destructive) { showingClearHistory = true }.disabled(history.items.isEmpty)
                     SettingsDivider()
                     SettingsActionRow(title: "Clear search history", role: .destructive) { SearchHistory.shared.clear() }
@@ -803,7 +821,7 @@ struct SettingsView: View {
             }
             .padding(.bottom, 110)
         }
-        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .background(VXTheme.background.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("Clear watch history?", isPresented: $showingClearHistory, titleVisibility: .visible) {
@@ -843,11 +861,15 @@ private struct SettingsGroup<Content: View>: View {
 private struct SettingsRow<Accessory: View>: View {
     let icon: String
     let title: String
+    var subtitle: String? = nil
     @ViewBuilder let accessory: Accessory
     var body: some View {
         HStack(spacing: 13) {
             SettingsIcon(systemName: icon)
-            Text(title).font(.body.weight(.medium))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(.body.weight(.semibold))
+                if let subtitle { Text(subtitle).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
+            }
             Spacer(minLength: 10)
             accessory
         }
@@ -858,11 +880,15 @@ private struct SettingsRow<Accessory: View>: View {
 private struct SettingsToggleRow: View {
     let icon: String
     let title: String
+    var subtitle: String? = nil
     @Binding var isOn: Bool
     var body: some View {
         HStack(spacing: 13) {
             SettingsIcon(systemName: icon)
-            Text(title).font(.body.weight(.medium))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(.body.weight(.semibold))
+                if let subtitle { Text(subtitle).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
+            }
             Spacer()
             Toggle("", isOn: $isOn).labelsHidden().tint(.vxAccent)
         }
@@ -887,7 +913,7 @@ private struct SettingsValueRow: View {
 
 private struct SettingsActionRow: View {
     let title: String
-    let role: ButtonRole?
+    var role: ButtonRole? = nil
     let action: () -> Void
     var body: some View {
         Button(role: role, action: action) {

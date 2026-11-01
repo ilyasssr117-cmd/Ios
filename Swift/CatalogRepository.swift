@@ -30,7 +30,7 @@ struct CatalogSourceConfiguration: Sendable {
     let userAgent: String
     let timeout: TimeInterval
 
-    static let userAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.7 Mobile/15E148 Safari/604.1"
+    static let userAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
 
     static func fromBundle(_ bundle: Bundle = .main) -> CatalogSourceConfiguration {
         func value(_ key: String, _ fallback: String) -> String {
@@ -72,8 +72,22 @@ struct CatalogSourceConfiguration: Sendable {
     }
 
     func url(path: String) -> URL {
-        let normalized = path.hasPrefix("/") ? String(path.dropFirst()) : path
+        // Join URL path components once. URL.appending(path:) preserves a
+        // trailing slash on the base, which previously produced `videos//`.
+        let normalized = path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         return URL(string: normalized, relativeTo: baseURL)?.absoluteURL ?? baseURL
+    }
+
+    func url(base: URL, path: String) -> URL {
+        let basePath = base.path.split(separator: "/").joined(separator: "/")
+        let childPath = path.split(separator: "/").joined(separator: "/")
+        var components = URLComponents(url: base, resolvingAgainstBaseURL: false)
+        components?.path = "/" + [basePath, childPath].filter { !$0.isEmpty }.joined(separator: "/") + "/"
+        components?.query = nil
+        components?.fragment = nil
+        assert(!(components?.path ?? "").contains("//"), "Catalog URL join produced a duplicate path slash")
+        assert((components?.path ?? "").hasSuffix("/"), "Catalog paths must retain the Flutter trailing-slash convention")
+        return components?.url ?? base
     }
 
     func pageURL(_ page: Int) -> URL {
@@ -233,7 +247,7 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
     func modelPage(_ model: ModelRef, page: Int = 1) async throws -> ModelPageResult {
         guard let base = normalizedModelURL(for: model) else { throw URLError(.badURL) }
         let path = page <= 1 ? "videos/" : "videos/\(page)/"
-        let url = base.appending(path: path)
+        let url = config.url(base: base, path: path)
         let payload: String
         do {
             payload = try await loadHTML(url)
@@ -255,7 +269,7 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         let url: URL
         if let model {
             guard let base = normalizedModelURL(for: model) else { throw URLError(.badURL) }
-            url = base.appending(path: page <= 1 ? "albums/" : "albums/\(page)/")
+            url = config.url(base: base, path: page <= 1 ? "albums/" : "albums/\(page)/")
         } else {
             url = config.url(path: page <= 1 ? "albums/" : "albums/\(page)/")
         }
@@ -360,8 +374,7 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         }
         var headers: [String: String] = [
             "User-Agent": config.userAgent,
-            "Accept": "*/*",
-            "Accept-Language": "en-US,en;q=0.9"
+            "Accept": "*/*"
         ]
         if let pageURL {
             headers["Referer"] = pageURL.absoluteString

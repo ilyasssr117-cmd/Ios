@@ -5,19 +5,20 @@ import Observation
 
 // MARK: - Artwork
 
-/// `VideoArtwork`. `AsyncImage` uses URLCache; swap for Nuke/Kingfisher if
-/// you need a larger disk cache or downsampling.
+/// `VideoArtwork` uses the shared downsampling cache and Flutter-compatible headers.
 struct ArtworkView: View {
     let video: Video
 
     var body: some View {
-        AsyncImage(url: video.thumbnailURL, transaction: Transaction(animation: .easeOut(duration: 0.2))) { phase in
-            switch phase {
-            case .success(let image):
-                image.resizable().scaledToFill()
-            default:
-                Rectangle().fill(.quaternary)
-                    .overlay { Image(systemName: "play.rectangle").font(.title).foregroundStyle(.tertiary) }
+        ZStack {
+            Rectangle().fill(.quaternary)
+                .overlay { Image(systemName: "play.rectangle").font(.title).foregroundStyle(.tertiary) }
+            if let url = video.thumbnailURL {
+                HeaderImage(url: url,
+                            headers: video.pageURL.flatMap { imageHeaders(for: $0.absoluteString) },
+                            maxPixel: 960)
+                .transition(.opacity)
+                .animation(.easeOut(duration: 0.2), value: url)
             }
         }
         .accessibilityHidden(true)

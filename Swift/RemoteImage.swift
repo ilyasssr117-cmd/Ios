@@ -22,19 +22,43 @@ struct ModelRef: Identifiable, Hashable, Sendable, Codable {
 final class RemoteImageLoader: @unchecked Sendable {
     static let shared = RemoteImageLoader()
     private let cache = NSCache<NSString, UIImage>()
+    private let session: URLSession
 
-    init() { cache.countLimit = 300 }
+    init() {
+        cache.countLimit = 300
+        cache.totalCostLimit = 96 * 1024 * 1024
+        let configuration = URLSessionConfiguration.default
+        configuration.httpMaximumConnectionsPerHost = 6
+        configuration.requestCachePolicy = .useProtocolCachePolicy
+        session = URLSession(configuration: configuration)
+    }
 
     func image(url: URL, headers: [String: String]?, maxPixel: CGFloat) async -> UIImage? {
-        let key = "\(url.absoluteString)@\(Int(maxPixel))" as NSString
+        let headerIdentity = (headers ?? [:]).sorted { $0.key < $1.key }
+            .map { "\($0.key):\($0.value)" }.joined(separator: "|")
+        let key = "\(url.absoluteString)@\(Int(maxPixel))@\(headerIdentity)" as NSString
         if let hit = cache.object(forKey: key) { return hit }
         var request = URLRequest(url: url, timeoutInterval: 20)
         headers?.forEach { request.setValue($1, forHTTPHeaderField: $0) }
-        guard let (data, response) = try? await URLSession.shared.data(for: request),
-              (response as? HTTPURLResponse)?.statusCode == 200,
-              let image = Self.downsample(data, maxPixel: maxPixel) else { return nil }
-        cache.setObject(image, forKey: key)
-        return image
+        for attempt in 0..<3 {
+            if Task.isCancelled { return nil }
+            do {
+                let (data, response) = try await session.data(for: request)
+                guard (response as? HTTPURLResponse)?.statusCode == 200,
+                      let image = Self.downsample(data, maxPixel: maxPixel) else {
+                    if attempt < 2 { try? await Task.sleep(for: .milliseconds(250 * (attempt + 1))); continue }
+                    return nil
+                }
+                cache.setObject(image, forKey: key, cost: image.cgImage.map { $0.bytesPerRow * $0.height } ?? 0)
+                return image
+            } catch is CancellationError {
+                return nil
+            } catch {
+                guard attempt < 2 else { return nil }
+                try? await Task.sleep(for: .milliseconds(250 * (attempt + 1)))
+            }
+        }
+        return nil
     }
 
     private static func downsample(_ data: Data, maxPixel: CGFloat) -> UIImage? {
@@ -57,15 +81,23 @@ struct HeaderImage: View {
     var onFailure: (() -> Void)?
 
     @State private var image: UIImage?
+    private var requestID: String {
+        let identity = (headers ?? [:]).sorted { $0.key < $1.key }
+            .map { "\($0.key)=\($0.value)" }.joined(separator: "&")
+        return "\(url.absoluteString)|\(identity)"
+    }
 
     var body: some View {
         Group {
             if let image { Image(uiImage: image).resizable().scaledToFill() } else { Color.clear }
         }
-        .task(id: url) {
+        .task(id: requestID) {
+            image = nil
             if let loaded = await RemoteImageLoader.shared.image(url: url, headers: headers, maxPixel: maxPixel) {
+                guard !Task.isCancelled else { return }
                 image = loaded
             } else {
+                guard !Task.isCancelled else { return }
                 onFailure?()
             }
         }
@@ -77,10 +109,11 @@ struct HeaderImage: View {
 func imageHeaders(for pageURL: String) -> [String: String]? {
     guard let url = URL(string: pageURL), let scheme = url.scheme, let host = url.host,
           scheme == "http" || scheme == "https" else { return nil }
+    let origin = "\(scheme)://\(host)" + (url.port.map { ":\($0)" } ?? "")
     return [
         "User-Agent": CatalogSourceConfiguration.userAgent,
-        "Referer": pageURL,
-        "Origin": "\(scheme)://\(host)"
+        "Referer": origin + "/",
+        "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8"
     ]
 }
 

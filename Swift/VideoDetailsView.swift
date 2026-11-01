@@ -57,7 +57,7 @@ struct VideoDetailsView: View {
             .padding(.bottom, Gaps.xl)
         }
         .ignoresSafeArea(edges: .top) // hero artwork runs under the status bar
-        .background(Color(.systemBackground))
+        .background(VXTheme.background)
         .refreshable { await vm.refresh() }
         .onScrollGeometryChange(for: CGFloat.self) { geo in
             geo.contentOffset.y + geo.contentInsets.top
@@ -174,29 +174,16 @@ struct VideoDetailsView: View {
         !v.duration.isEmpty || !v.likes.isEmpty || !v.views.isEmpty || !v.date.isEmpty
     }
 
-    /// Blurred copy fills the panel; the sharp copy fades into it at the
-    /// sides and toward the bottom (the two ShaderMasks), under a dark scrim.
+    /// Keep the actual thumbnail visible; the bottom scrim separates its
+    /// artwork from the title and action row.
     private func heroArtwork(_ video: Video) -> some View {
         ZStack {
-            Color(.secondarySystemBackground)
             ArtworkView(video: video)
-                .blur(radius: 30)
-                .drawingGroup()
-            ArtworkView(video: video)
-                .mask(LinearGradient(stops: [.init(color: .clear, location: 0),
-                                             .init(color: .black, location: 0.075),
-                                             .init(color: .black, location: 0.925),
-                                             .init(color: .clear, location: 1)],
-                                     startPoint: .leading, endPoint: .trailing))
-                .mask(LinearGradient(stops: [.init(color: .black, location: 0),
-                                             .init(color: .black, location: 0.44),
-                                             .init(color: .clear, location: 1)],
-                                     startPoint: .top, endPoint: .bottom))
             LinearGradient(stops: [
-                .init(color: Color(red: 0.05, green: 0.06, blue: 0.13).opacity(0.24), location: 0),
-                .init(color: Color(red: 0.05, green: 0.06, blue: 0.13).opacity(0.15), location: 0.24),
-                .init(color: Color(red: 0.05, green: 0.06, blue: 0.13).opacity(0.54), location: 0.58),
-                .init(color: Color(red: 0.05, green: 0.06, blue: 0.13).opacity(0.95), location: 1),
+                .init(color: .black.opacity(0.06), location: 0),
+                .init(color: .black.opacity(0.12), location: 0.28),
+                .init(color: .black.opacity(0.66), location: 0.66),
+                .init(color: .black.opacity(0.94), location: 1),
             ], startPoint: .top, endPoint: .bottom)
         }
         .clipped()
@@ -301,7 +288,7 @@ struct VideoDetailsView: View {
         .padding(.horizontal, margin)
         .padding(.vertical, 7)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.systemBackground))
+        .background(VXTheme.background)
         .overlay(alignment: .bottom) { Divider().opacity(0.55) }
     }
 

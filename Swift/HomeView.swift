@@ -11,7 +11,7 @@ enum AppSection: Int, Hashable, CaseIterable {
     case home, library, settings
 }
 
-enum LibrarySegment: String, Hashable, CaseIterable { case downloads, favorites, history, models, albums }
+enum LibrarySegment: String, Hashable, CaseIterable { case favorites, models, history, downloads }
 
 struct LibraryRequest: Equatable { let segment: LibrarySegment; let token: Int }
 struct DetailsRoute: Hashable { let video: Video; let queue: [Video] }
@@ -108,11 +108,7 @@ struct HomeView: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .indexViewStyle(.page(backgroundDisplayMode: .never))
-            .background(Color(.systemBackground))
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                // Keeps scroll content clear of the floating glass dock.
-                Color.clear.frame(height: 78).accessibilityHidden(true)
-            }
+            .background(VXTheme.background)
             .overlay(alignment: .bottom) {
                 GlassTabBar(selection: $router.selection, onSelect: { tab in
                     PreviewManager.shared.stopNow()
@@ -222,6 +218,10 @@ private struct GlassTabBar: View {
     @Binding var selection: AppTab
     let onSelect: (AppTab) -> Void
     @Namespace private var selectionMotion
+    @State private var itemFrames: [AppTab: CGRect] = [:]
+    @State private var dragTarget: AppTab?
+
+    private var visualSelection: AppTab { dragTarget ?? selection }
 
     private struct Item: Identifiable {
         let tab: AppTab
@@ -241,9 +241,8 @@ private struct GlassTabBar: View {
     var body: some View {
         HStack(spacing: 0) {
             ForEach(items) { item in
-                let active = selection == item.tab
+                let active = visualSelection == item.tab
                 Button {
-                    Haptics.play(.selection)
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
                         selection = item.tab
                     }
@@ -279,6 +278,12 @@ private struct GlassTabBar: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(item.title)
                 .accessibilityAddTraits(active ? .isSelected : [])
+                .background {
+                    GeometryReader { proxy in
+                        Color.clear.preference(key: TabFramePreferenceKey.self,
+                                               value: [item.tab: proxy.frame(in: .global)])
+                    }
+                }
             }
         }
         .padding(.horizontal, 7)
@@ -291,15 +296,30 @@ private struct GlassTabBar: View {
         .shadow(color: .black.opacity(0.2), radius: 24, x: 0, y: 9)
         .frame(height: 76)
         .accessibilityElement(children: .contain)
+        .onPreferenceChange(TabFramePreferenceKey.self) { itemFrames = $0 }
+        .contentShape(RoundedRectangle(cornerRadius: 31, style: .continuous))
+        .simultaneousGesture(DragGesture(minimumDistance: 0, coordinateSpace: .global)
+            .onChanged { value in
+                guard let target = itemFrames.first(where: { $0.value.contains(value.location) })?.key else { return }
+                if visualSelection != target { Haptics.play(.selection) }
+                withAnimation(.spring(response: 0.23, dampingFraction: 0.78)) { dragTarget = target }
+            }
+            .onEnded { value in
+                let target = itemFrames.first(where: { $0.value.contains(value.location) })?.key ?? dragTarget
+                dragTarget = nil
+                if let target { onSelect(target) }
+            })
+    }
+}
+
+private struct TabFramePreferenceKey: PreferenceKey {
+    static var defaultValue: [AppTab: CGRect] = [:]
+    static func reduce(value: inout [AppTab: CGRect], nextValue: () -> [AppTab: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, newest in newest })
     }
 }
 
 // MARK: - Home screen
-
-/// Tracks pull-to-stretch. Kept in its own observable so only `HeroStretch`
-/// re-renders while pulling (the ListenableBuilder/RepaintBoundary trick).
-@MainActor @Observable
-private final class PullState { var amount: CGFloat = 0 }
 
 struct HomeScreen: View {
     @Bindable var vm: HomeViewModel
@@ -309,7 +329,6 @@ struct HomeScreen: View {
     @Environment(PreviewManager.self) private var preview
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.scenePhase) private var scenePhase
-    @State private var pull = PullState()
 
     private var margin: CGFloat { sizeClass == .regular ? 24 : 16 }
     private var columns: [GridItem] {
@@ -323,8 +342,7 @@ struct HomeScreen: View {
         // the manual `safe.top` / `kBottomBarHeight` paddings are gone.
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                HeroStretch(pull: pull) {
-                    HomeHeroView(
+                HomeHeroView(
                         video: vm.featured,
                         isLoading: vm.videos.isEmpty && vm.isLoading,
                         playLabel: vm.resumeAvailable ? "Resume" : "Play",
@@ -335,7 +353,6 @@ struct HomeScreen: View {
                             if let featured = vm.featured { onOpen(featured, vm.videos) }
                         }
                     )
-                }
 
                 ContinueRow(margin: margin) { video in Task { await vm.resume(video) } }
 
@@ -353,18 +370,14 @@ struct HomeScreen: View {
 
                 content
             }
-            .padding(.bottom, Gaps.xl)
+            .padding(.bottom, 110)
         }
-        .refreshable { await vm.refresh() }          // RefreshIndicator -> native
-        .onScrollGeometryChange(for: CGFloat.self) { geo in
-            max(0, -(geo.contentOffset.y + geo.contentInsets.top))
-        } action: { _, newValue in
-            pull.amount = newValue
-        }
+        .refreshable { await vm.refresh() }
+        .tint(.white)
         .onScrollPhaseChange { _, phase in
             if phase == .interacting { preview.stopNow() }
         }
-        .background(Color(.systemBackground))
+        .background(VXTheme.background)
         .toast($vm.toast)
         .task { vm.startIfNeeded() }
         .onChange(of: scenePhase) { _, phase in
@@ -415,16 +428,6 @@ struct HomeScreen: View {
                 .padding(.top, Gaps.lg)
             }
         }
-    }
-}
-
-/// Scales the featured card slightly while pulled past the top.
-private struct HeroStretch<Content: View>: View {
-    let pull: PullState
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        content.scaleEffect(1 + min(pull.amount, 120) / 2400, anchor: .bottom)
     }
 }
 
