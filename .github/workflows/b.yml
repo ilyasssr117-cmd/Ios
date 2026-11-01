@@ -1,0 +1,170 @@
+name: Fast Native iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-native-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-ios:
+    name: Build Native SwiftUI IPA
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+          xcodebuild -version
+
+      - name: Find Xcode project
+        id: project
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PROJECT=$(find . -maxdepth 3 -name "*.xcodeproj" | head -1)
+          WORKSPACE=$(find . -maxdepth 3 -name "*.xcworkspace" | head -1)
+
+          if [ -n "$WORKSPACE" ]; then
+            echo "workspace=$WORKSPACE" >> "$GITHUB_OUTPUT"
+            echo "Using workspace: $WORKSPACE"
+          elif [ -n "$PROJECT" ]; then
+            echo "project=$PROJECT" >> "$GITHUB_OUTPUT"
+            echo "Using project: $PROJECT"
+          else
+            echo "ERROR: No Xcode project/workspace found."
+            exit 1
+          fi
+
+      - name: Detect scheme
+        id: scheme
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -n "${{ steps.project.outputs.workspace }}" ]; then
+            TARGET="${{ steps.project.outputs.workspace }}"
+            SCHEMES=$(xcodebuild -workspace "$TARGET" -list 2>/dev/null)
+          else
+            TARGET="${{ steps.project.outputs.project }}"
+            SCHEMES=$(xcodebuild -project "$TARGET" -list 2>/dev/null)
+          fi
+
+          echo "$SCHEMES"
+
+          SCHEME=$(echo "$SCHEMES" |
+            sed -n '/Schemes:/,/^$/p' |
+            grep -v "Schemes:" |
+            sed 's/^[[:space:]]*//' |
+            grep -v '^$' |
+            head -1)
+
+          if [ -z "$SCHEME" ]; then
+            echo "ERROR: Could not detect scheme."
+            exit 1
+          fi
+
+          echo "scheme=$SCHEME" >> "$GITHUB_OUTPUT"
+          echo "Using scheme: $SCHEME"
+
+      - name: Resolve Swift packages
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -n "${{ steps.project.outputs.workspace }}" ]; then
+            xcodebuild \
+              -workspace "${{ steps.project.outputs.workspace }}" \
+              -scheme "${{ steps.scheme.outputs.scheme }}" \
+              -resolvePackageDependencies
+          else
+            xcodebuild \
+              -project "${{ steps.project.outputs.project }}" \
+              -scheme "${{ steps.scheme.outputs.scheme }}" \
+              -resolvePackageDependencies
+          fi
+
+      - name: Build Release
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          COMMON_ARGS=(
+            -scheme "${{ steps.scheme.outputs.scheme }}"
+            -configuration Release
+            -sdk iphoneos
+            -destination "generic/platform=iOS"
+            -derivedDataPath build
+            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_REQUIRED=NO
+            CODE_SIGN_IDENTITY=""
+          )
+
+          if [ -n "${{ steps.project.outputs.workspace }}" ]; then
+            xcodebuild \
+              -workspace "${{ steps.project.outputs.workspace }}" \
+              "${COMMON_ARGS[@]}" \
+              build
+          else
+            xcodebuild \
+              -project "${{ steps.project.outputs.project }}" \
+              "${COMMON_ARGS[@]}" \
+              build
+          fi
+
+      - name: Locate .app
+        id: app
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          APP=$(find build -type d -name "*.app" \
+            -path "*/Build/Products/Release-iphoneos/*" \
+            | head -1)
+
+          if [ -z "$APP" ]; then
+            echo "ERROR: Release .app not found."
+            find build -type d -name "*.app" || true
+            exit 1
+          fi
+
+          echo "Found: $APP"
+          echo "path=$APP" >> "$GITHUB_OUTPUT"
+
+      - name: Package IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rm -rf IPA
+          mkdir -p IPA/Payload
+
+          cp -R "${{ steps.app.outputs.path }}" IPA/Payload/
+
+          cd IPA
+          /usr/bin/zip -qry ../VXTUBE-unsigned.ipa Payload
+
+          test -s ../VXTUBE-unsigned.ipa
+
+          echo "IPA created successfully:"
+          ls -lh ../VXTUBE-unsigned.ipa
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: VXTUBE-unsigned-IPA
+          path: VXTUBE-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 7
