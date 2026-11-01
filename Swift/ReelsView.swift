@@ -31,12 +31,16 @@ struct ReelsView: View {
 
         GeometryReader { root in
             let insets = root.safeAreaInsets
-            let bottom = insets.bottom + 4
+            // The canvas intentionally extends behind system chrome. GeometryReader
+            // can therefore report zero insets on some devices; reserve explicit
+            // status-bar/home-indicator space so top actions never sit under the notch.
+            let top = max(insets.top, 64)
+            let bottom = max(insets.bottom, 26) + 6
 
             ZStack {
                 Color.black
-                content(topInset: insets.top, bottom: bottom)
-                scrims(top: insets.top, bottom: bottom)
+                content(topInset: top, bottom: bottom)
+                scrims(top: top, bottom: bottom)
 
                 if let message = vm.errorMessage, !vm.items.isEmpty {
                     ReelsErrorCard(message: message) { vm.loadMore() }
@@ -45,10 +49,13 @@ struct ReelsView: View {
                         .frame(maxHeight: .infinity, alignment: .bottom)
                 }
 
-                ReelsTopBar(clear: vm.isClear, onBack: onExit, onToggleClear: vm.toggleClear)
-                    .padding(.top, insets.top + 4)
-                    .padding(.horizontal, 8)
+                ReelsTopBar(clear: vm.isClear, isMuted: vm.isMuted,
+                            onBack: onExit, onToggleMute: vm.toggleMute,
+                            onToggleClear: vm.toggleClear)
+                    .padding(.top, top + 8)
+                    .padding(.horizontal, 10)
                     .frame(maxHeight: .infinity, alignment: .top)
+                    .zIndex(20)
             }
         }
         .ignoresSafeArea()
@@ -120,43 +127,59 @@ struct ReelsView: View {
 
 private struct ReelsTopBar: View {
     let clear: Bool
+    let isMuted: Bool
     let onBack: () -> Void
+    let onToggleMute: () -> Void
     let onToggleClear: () -> Void
 
     var body: some View {
-        HStack {
-            Button(action: onBack) {
-                Image(systemName: "chevron.backward")
-                    .font(.system(size: 19, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.4), radius: 6)
-                    .frame(width: 44, height: 44)
-            }
-            .accessibilityLabel("Back")
+        HStack(spacing: 7) {
+            topButton("chevron.backward", label: "Back", action: onBack)
 
-            Spacer()
-            VStack(spacing: 4) {
+            Spacer(minLength: 5)
+
+            HStack(spacing: 7) {
+                Circle().fill(Color.white.opacity(0.92)).frame(width: 6, height: 6)
                 Text("For You")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.4), radius: 6)
-                Capsule().fill(.white).frame(width: 18, height: 3)
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .lineLimit(1)
             }
-            .accessibilityElement(children: .combine)
-            .accessibilityAddTraits(.isHeader)
-            Spacer()
+            .foregroundStyle(.white)
+            .padding(.horizontal, 15)
+            .frame(height: 40)
+            .background(.white.opacity(0.10), in: Capsule(style: .continuous))
+            .overlay(Capsule(style: .continuous).strokeBorder(.white.opacity(0.15), lineWidth: 0.8))
 
-            Button(action: onToggleClear) {
-                Image(systemName: clear ? "eye.slash" : "eye")
-                    .font(.system(size: 20))
-                    .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.4), radius: 6)
-                    .frame(width: 44, height: 44)
-            }
-            .buttonStyle(PressableButtonStyle(scale: 0.85))
-            .accessibilityLabel(clear ? "Show controls" : "Hide controls")
+            Spacer(minLength: 5)
+
+            topButton(isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill",
+                      label: isMuted ? "Unmute" : "Mute", action: onToggleMute)
+            topButton(clear ? "eye.slash" : "eye", label: clear ? "Show controls" : "Hide controls",
+                      action: onToggleClear)
         }
-        .frame(height: 44)
+        .padding(5)
+        .background(.ultraThinMaterial, in: Capsule(style: .continuous))
+        .overlay(Capsule(style: .continuous).strokeBorder(.white.opacity(0.19), lineWidth: 0.8))
+        .shadow(color: .black.opacity(0.22), radius: 16, y: 6)
+        .accessibilityElement(children: .contain)
+    }
+
+    private func topButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
+        Button {
+            Haptics.play(.selection)
+            action()
+        } label: {
+            Image(systemName: symbol)
+                .font(.system(size: 16, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.white)
+                .frame(width: 42, height: 42)
+                .background(.white.opacity(0.10), in: Circle())
+                .overlay(Circle().strokeBorder(.white.opacity(0.13), lineWidth: 0.8))
+                .contentShape(Circle())
+        }
+        .buttonStyle(PressableButtonStyle(scale: 0.9))
+        .accessibilityLabel(label)
     }
 }
 
@@ -466,9 +489,12 @@ private struct SkipFeedback: View {
         }
         .foregroundStyle(.white)
         .frame(width: 78, height: 70)
-        .background(Color(red: 0.10, green: 0.10, blue: 0.11).opacity(0.72),
+        .background(.ultraThinMaterial,
                     in: RoundedRectangle(cornerRadius: 21, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 21, style: .continuous).strokeBorder(.white.opacity(0.2), lineWidth: 0.8))
+        .overlay(RoundedRectangle(cornerRadius: 21, style: .continuous)
+            .fill(Color.black.opacity(0.24)))
+        .overlay(RoundedRectangle(cornerRadius: 21, style: .continuous)
+            .strokeBorder(.white.opacity(0.24), lineWidth: 0.8))
         .shadow(color: .black.opacity(0.2), radius: 7, y: 4)
         .id(pulse) // re-triggers the pop on every chained skip
         .transition(.scale(scale: 0.88).combined(with: .opacity))
@@ -667,6 +693,9 @@ private struct RailButton: View {
                         .symbolEffect(.bounce, value: popTrigger ?? false)
                 }
                 .frame(width: 46, height: 46)
+                .background(.ultraThinMaterial, in: Circle())
+                .overlay(Circle().fill(Color.black.opacity(0.13)))
+                .overlay(Circle().strokeBorder(.white.opacity(0.20), lineWidth: 0.8))
 
                 Text(label)
                     .font(.system(size: 12, weight: .semibold))

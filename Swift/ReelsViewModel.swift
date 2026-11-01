@@ -21,7 +21,7 @@ final class ReelsViewModel {
     static let historyKeep = 12
     static let trimTrigger = 48
     private static let neighborPreloadDelay: Duration = .milliseconds(240)
-    private static let clearKey = "reels_clear_mode_v1"
+    private static let clearKey = "reels_clear_mode_v2"
     private static let maxSaveBytes: Int64 = 350 * 1024 * 1024
 
     // Observable state
@@ -55,7 +55,7 @@ final class ReelsViewModel {
         self.downloads = dependencies.downloads
         self.repository = repository
         self.defaults = defaults
-        self.isClear = defaults.bool(forKey: Self.clearKey)
+        self.isClear = defaults.object(forKey: Self.clearKey) as? Bool ?? false
     }
 
     // MARK: Lifecycle

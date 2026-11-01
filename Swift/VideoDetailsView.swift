@@ -67,6 +67,7 @@ struct VideoDetailsView: View {
             if over != overHeader { overHeader = over }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
         .toolbarBackgroundVisibility(overHeader ? .hidden : .automatic, for: .navigationBar)
         .toolbarColorScheme(overHeader ? .dark : nil, for: .navigationBar)
         .toast($vm.toast)
@@ -124,7 +125,11 @@ struct VideoDetailsView: View {
                         Label(resume.map { "Resume \(formatPlayerTime($0))" } ?? "Play", systemImage: "play.fill")
                     }
                 }
-                .buttonStyle(.borderedProminent).tint(.vxAccent)
+                .buttonStyle(.plain)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 18).frame(height: 46)
+                .background(Color.vxSocialGradient, in: Capsule(style: .continuous))
+                .shadow(color: Color.vxAccent.opacity(0.24), radius: 12, y: 5)
                 .disabled(vm.preparing)
 
                 if resume != nil {
@@ -138,7 +143,7 @@ struct VideoDetailsView: View {
                 downloadButtons
 
                 if vm.shareLink != nil {
-                    Button { vm.copyLink() } label: { Label("Copy link", systemImage: "link") }
+                    Button { vm.copyLink() } label: { Label("Share", systemImage: "square.and.arrow.up") }
                         .buttonStyle(.bordered).tint(.white)
                 }
             }
@@ -392,8 +397,8 @@ private struct ModelChip: View {
             }
             .padding(.leading, 10).padding(.trailing, 12)
             .frame(height: 36)
-            .background(Color(.secondarySystemFill), in: Capsule())
-            .overlay(Capsule().strokeBorder(Color(.separator)))
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay(Capsule().strokeBorder(Color.primary.opacity(0.10), lineWidth: 0.8))
         }
         .buttonStyle(PressableButtonStyle(scale: 0.95))
         .accessibilityLabel("Model \(model.name)")

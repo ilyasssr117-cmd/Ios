@@ -334,8 +334,9 @@ private struct TopBar: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 12).frame(height: 38)
-                    .background(.black.opacity(0.55), in: Capsule())
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.15)))
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .overlay(Capsule().fill(.black.opacity(0.18)))
+                    .overlay(Capsule().strokeBorder(.white.opacity(0.22), lineWidth: 0.8))
             }
             .buttonStyle(PressableButtonStyle(scale: 0.9))
             .accessibilityLabel("Playback speed")
@@ -455,7 +456,10 @@ struct PlayerIconButton: View {
                 .font(.system(size: iconSize, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: size, height: size)
-                .background(background, in: Circle())
+                .background(.ultraThinMaterial, in: Circle())
+                .overlay(Circle().fill(background))
+                .overlay(Circle().strokeBorder(.white.opacity(0.24), lineWidth: 0.8))
+                .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
                 .frame(minWidth: 44, minHeight: 44)
                 .contentShape(Circle())
         }

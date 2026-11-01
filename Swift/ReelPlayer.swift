@@ -86,6 +86,17 @@ final class ReelPlayer {
             }
             .store(in: &itemBag)
 
+        item.publisher(for: \.duration)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] value in
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    let seconds = value.seconds
+                    if seconds.isFinite && seconds > 0 { self.duration = seconds }
+                }
+            }
+            .store(in: &itemBag)
+
         item.publisher(for: \.loadedTimeRanges)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] ranges in
@@ -124,7 +135,7 @@ final class ReelPlayer {
         case .readyToPlay:
             timeoutTask?.cancel()
             let seconds = item.duration.seconds
-            duration = seconds.isFinite ? seconds : 0
+            if seconds.isFinite && seconds > 0 { duration = seconds }
             state = .ready
             if wantsPlay { startPlayback() }
         case .failed:

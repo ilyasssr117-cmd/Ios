@@ -9,14 +9,19 @@ enum Gaps {
 }
 
 enum Radii {
-    static let card: CGFloat = 22
-    static let hero: CGFloat = 28
+    static let card: CGFloat = 20
+    static let hero: CGFloat = 30
 }
 
 extension Color {
-    /// Flutter `AppColors.accent` (0xFF8585FF). Put this in the asset
-    /// catalog as "AccentColor" so `.tint` picks it up app-wide.
-    static let vxAccent = Color(red: 133.0 / 255.0, green: 133.0 / 255.0, blue: 1.0)
+    /// Modern social-app indigo: vivid on light surfaces, restrained in dark mode.
+    static let vxAccent = Color(red: 0.34, green: 0.39, blue: 0.98)
+    static let vxAccentSecondary = Color(red: 0.55, green: 0.31, blue: 0.96)
+    static let vxSocialGradient = LinearGradient(
+        colors: [.vxAccent, .vxAccentSecondary],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
 }
 
 // MARK: - Models (from models.dart)

@@ -3,40 +3,82 @@ import Observation
 
 // MARK: - Router
 
-enum AppTab: Hashable { case home, search, reels, library, settings }
+enum AppTab: Hashable, CaseIterable {
+    case home, search, reels, library, settings
+}
+
+enum AppSection: Int, Hashable, CaseIterable {
+    case home, library, settings
+}
+
 enum LibrarySegment: String, Hashable, CaseIterable { case downloads, favorites, history, models, albums }
 
 struct LibraryRequest: Equatable { let segment: LibrarySegment; let token: Int }
 struct DetailsRoute: Hashable { let video: Video; let queue: [Video] }
 
-/// Replaces `_section`, `_libraryRequest` and the manual route pushes.
+/// Coordinates the three swipeable root sections and the two modal destinations.
 @MainActor @Observable
 final class AppRouter {
     var selection: AppTab = .home
+    var section: AppSection = .home
+    var isSearchPresented = false
+    var isReelsPresented = false
     var libraryRequest: LibraryRequest?
-    var details: DetailsRoute?
+    var path: [DetailsRoute] = []
     var selectedModel: ModelRef?
     private var token = 0
+
+    func select(_ tab: AppTab) {
+        switch tab {
+        case .home:
+            section = .home
+            selection = .home
+        case .search:
+            selection = .search
+            isSearchPresented = true
+        case .reels:
+            selection = .reels
+            isReelsPresented = true
+        case .library:
+            section = .library
+            selection = .library
+        case .settings:
+            section = .settings
+            selection = .settings
+        }
+    }
+
+    func restoreDockSelection() {
+        switch section {
+        case .home: selection = .home
+        case .library: selection = .library
+        case .settings: selection = .settings
+        }
+    }
+
+    func sectionDidChange(_ section: AppSection) {
+        self.section = section
+        switch section {
+        case .home: selection = .home
+        case .library: selection = .library
+        case .settings: selection = .settings
+        }
+    }
 
     func showDownloads() {
         token += 1
         libraryRequest = LibraryRequest(segment: .downloads, token: token)
-        selection = .library
+        select(.library)
     }
 }
 
 // MARK: - Root
 
-/// MIGRATION NOTES (architecture)
-/// - Flutter's hand-built section pager (Stack + drag gestures + settle
-///   AnimationController + RidingTabBar) is replaced by the native `TabView`,
-///   which provides the HIG tab bar, state retention and lazy tab creation.
-///   The swipe-between-sections gesture is intentionally dropped (it fights
-///   native back-swipe and scroll gestures); the tab bar is the navigation.
-/// - The root `NavigationStack` wraps the `TabView`, so pushed details cover
-///   the tab bar exactly like `Navigator.push` over HomePage did.
-/// - Search is a tab, not an overlay; Android-style PopScope/back handling
-///   is gone (iOS back is the edge swipe / nav bar).
+/// Keeps the original Flutter information architecture:
+/// - Home, Library and Settings are horizontally swipeable root sections.
+/// - Search and Reels are full-screen destinations opened from the glass dock.
+/// - The floating dock can be tapped or scrubbed horizontally to change tabs.
+/// Native TabView paging replaces the manually animated Flutter section stack.
 struct HomeView: View {
     @State private var vm: HomeViewModel
     @State private var router = AppRouter()
@@ -51,54 +93,86 @@ struct HomeView: View {
         @Bindable var vm = vm
         @Bindable var router = router
 
-        NavigationStack {
-            TabView(selection: $router.selection) {
+        NavigationStack(path: $router.path) {
+            TabView(selection: $router.section) {
                 HomeScreen(vm: vm, onOpen: openDetails)
-                    .tabItem { Label("Home", systemImage: "house.fill") }
-                    .tag(AppTab.home)
-
-                SearchScreen(dependencies: deps, onOpen: openDetails)
-                    .tabItem { Label("Search", systemImage: "magnifyingglass") }
-                    .tag(AppTab.search)
-
-                ReelsView(dependencies: deps,
-                          isActive: router.selection == .reels,
-                          onExit: { router.selection = .home })
-                    .toolbar(.hidden, for: .tabBar) // full-bleed reels, like the faded dock
-                    .tabItem { Label("Reels", systemImage: "play.rectangle.on.rectangle.fill") }
-                    .tag(AppTab.reels)
+                    .tag(AppSection.home)
 
                 LibraryView(request: router.libraryRequest, dependencies: deps,
                             onOpen: openDetails,
-                            onBrowse: { router.selection = .home })
-                    .tabItem { Label("Library", systemImage: "books.vertical.fill") }
-                    .tag(AppTab.library)
+                            onBrowse: { router.select(.home) })
+                    .tag(AppSection.library)
 
                 SettingsView()
-                    .tabItem { Label("Settings", systemImage: "gearshape.fill") }
-                    .tag(AppTab.settings)
+                    .tag(AppSection.settings)
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .indexViewStyle(.page(backgroundDisplayMode: .never))
+            .background(Color(.systemBackground))
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                // Keeps scroll content clear of the floating glass dock.
+                Color.clear.frame(height: 94).accessibilityHidden(true)
+            }
+            .overlay(alignment: .bottom) {
+                GlassTabBar(selection: $router.selection, onSelect: { tab in
+                    PreviewManager.shared.stopNow()
+                    router.select(tab)
+                })
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+                .opacity(router.isSearchPresented || router.isReelsPresented ? 0 : 1)
+                .allowsHitTesting(!router.isSearchPresented && !router.isReelsPresented)
+                .animation(.spring(response: 0.34, dampingFraction: 0.84),
+                           value: router.selection)
             }
             .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(item: $router.details) { route in
-                VideoDetailsView(video: route.video, queue: route.queue, dependencies: deps, onOpenRelated: openDetails, onOpenModel: { router.selectedModel = $0 }, onPlay: { vm.playerRoute = $0 })
+            .navigationDestination(for: DetailsRoute.self) { route in
+                VideoDetailsView(video: route.video, queue: route.queue,
+                                 dependencies: deps, onOpenRelated: openDetails,
+                                 onOpenModel: { router.selectedModel = $0 },
+                                 onPlay: { vm.playerRoute = $0 })
             }
         }
+        .fullScreenCover(isPresented: $router.isSearchPresented, onDismiss: {
+            router.restoreDockSelection()
+        }) {
+            NavigationStack {
+                SearchScreen(dependencies: deps, onOpen: openDetailsFromSearch, onClose: {
+                    router.isSearchPresented = false
+                })
+                .toolbar(.hidden, for: .navigationBar)
+            }
+            .tint(.vxAccent)
+        }
+        .fullScreenCover(isPresented: $router.isReelsPresented, onDismiss: {
+            router.restoreDockSelection()
+        }) {
+            ReelsView(dependencies: deps, isActive: true, onExit: {
+                router.isReelsPresented = false
+            })
+        }
         .fullScreenCover(item: $vm.playerRoute) { PlayerScreen(route: $0, dependencies: deps) }
-        .sheet(item: $router.selectedModel) { model in ModelBrowserView(model: model, dependencies: deps, onOpen: openDetails) }
+        .sheet(item: $router.selectedModel) { model in
+            ModelBrowserView(model: model, dependencies: deps, onOpen: openDetails)
+        }
         .overlay(alignment: .bottom) {
-            if router.selection != .reels, MiniPlayer.shared.session != nil {
+            if !router.isSearchPresented, !router.isReelsPresented,
+               MiniPlayer.shared.session != nil {
                 MiniPlayerBar {
                     if let session = MiniPlayer.shared.release() {
                         vm.playerRoute = DefaultPlaybackLauncher.route(adopting: session)
                     }
                 }
-                .padding(.bottom, 52)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 92)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .onChange(of: router.selection) { PreviewManager.shared.stopNow() }
+        .onChange(of: router.section) { _, section in
+            PreviewManager.shared.stopNow()
+            router.sectionDidChange(section)
+        }
         .onAppear {
-            // Tapping "restore" in the PiP window re-presents the live player.
             PiPCoordinator.shared.onRestore = { session in
                 vm.playerRoute = DefaultPlaybackLauncher.route(adopting: session)
             }
@@ -115,8 +189,150 @@ struct HomeView: View {
         if video.isSavedReel {
             Task { await vm.openSavedReel(video) }
         } else {
-            router.details = DetailsRoute(video: video, queue: queue)
+            PreviewManager.shared.stopNow()
+            router.path.append(DetailsRoute(video: video, queue: queue))
         }
+    }
+
+    private func openDetailsFromSearch(_ video: Video, queue: [Video]) {
+        router.isSearchPresented = false
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(320))
+            if video.isSavedReel {
+                await vm.openSavedReel(video)
+            } else {
+                router.path.append(DetailsRoute(video: video, queue: queue))
+            }
+        }
+    }
+}
+
+// MARK: - Floating glass navigation
+
+private struct GlassTabBar: View {
+    @Binding var selection: AppTab
+    let onSelect: (AppTab) -> Void
+
+    @State private var scrubbedTab: AppTab?
+    @State private var isScrubbing = false
+
+    private struct Item: Identifiable {
+        let tab: AppTab
+        let title: String
+        let symbol: String
+        var id: AppTab { tab }
+    }
+
+    private let items: [Item] = [
+        Item(tab: .home, title: "Home", symbol: "house.fill"),
+        Item(tab: .search, title: "Search", symbol: "magnifyingglass"),
+        Item(tab: .reels, title: "Reels", symbol: "play.rectangle.on.rectangle.fill"),
+        Item(tab: .library, title: "Library", symbol: "books.vertical.fill"),
+        Item(tab: .settings, title: "Settings", symbol: "slider.horizontal.3")
+    ]
+
+    private var highlightedTab: AppTab { scrubbedTab ?? selection }
+
+    var body: some View {
+        GeometryReader { geometry in
+            let contentWidth = max(geometry.size.width - 12, 0)
+            let itemWidth = contentWidth / CGFloat(items.count)
+            let selectedIndex = CGFloat(items.firstIndex(where: { $0.tab == highlightedTab }) ?? 0)
+
+            ZStack(alignment: .leading) {
+                Capsule(style: .continuous)
+                    .fill(.ultraThinMaterial)
+
+                Capsule(style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.vxAccent.opacity(0.23), Color.vxAccent.opacity(0.10)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay {
+                        Capsule(style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.22), lineWidth: 0.8)
+                    }
+                    .frame(width: max(0, itemWidth - 8), height: 58)
+                    .offset(x: selectedIndex * itemWidth + 4)
+                    .animation(isScrubbing ? nil : .spring(response: 0.34, dampingFraction: 0.76),
+                               value: highlightedTab)
+
+                HStack(spacing: 0) {
+                    ForEach(items) { item in
+                        let active = highlightedTab == item.tab
+                        Button {
+                            Haptics.play(.selection)
+                            withAnimation(.spring(response: 0.34, dampingFraction: 0.78)) {
+                                selection = item.tab
+                                scrubbedTab = nil
+                                isScrubbing = false
+                            }
+                            onSelect(item.tab)
+                        } label: {
+                            VStack(spacing: 4) {
+                                Image(systemName: item.symbol)
+                                    .font(.system(size: 18, weight: active ? .semibold : .regular))
+                                    .symbolRenderingMode(.hierarchical)
+                                    .scaleEffect(active ? 1.08 : 1)
+                                    .frame(height: 21)
+                                Text(item.title)
+                                    .font(active ? .caption2.weight(.bold) : .caption2.weight(.medium))
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
+                            }
+                            .foregroundStyle(active ? Color.primary : Color.secondary)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 58)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(item.title)
+                        .accessibilityAddTraits(active ? .isSelected : [])
+                    }
+                }
+            }
+            .padding(6)
+            .background(.ultraThinMaterial, in: Capsule(style: .continuous))
+            .overlay {
+                Capsule(style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.28), lineWidth: 0.9)
+            }
+            .shadow(color: Color.black.opacity(0.15), radius: 22, x: 0, y: 9)
+            .shadow(color: Color.vxAccent.opacity(0.08), radius: 18, x: 0, y: 2)
+            .contentShape(Capsule())
+            .highPriorityGesture(
+                DragGesture(minimumDistance: 10)
+                    .onChanged { value in
+                        guard abs(value.translation.width) > 8 else { return }
+                        let clampedX = min(max(value.location.x - 6, 0), contentWidth)
+                        let index = min(max(Int(clampedX / max(itemWidth, 1)), 0), items.count - 1)
+                        let target = items[index].tab
+                        if target != highlightedTab {
+                            Haptics.play(.selection)
+                        }
+                        isScrubbing = true
+                        scrubbedTab = target
+                    }
+                    .onEnded { value in
+                        guard isScrubbing else { return }
+                        let clampedX = min(max(value.location.x - 6, 0), contentWidth)
+                        let index = min(max(Int(clampedX / max(itemWidth, 1)), 0), items.count - 1)
+                        let target = items[index].tab
+                        withAnimation(.spring(response: 0.36, dampingFraction: 0.78)) {
+                            selection = target
+                            scrubbedTab = nil
+                            isScrubbing = false
+                        }
+                        Haptics.play(.medium)
+                        onSelect(target)
+                    }
+            )
+        }
+        .frame(height: 70)
+        .accessibilityElement(children: .contain)
     }
 }
 
@@ -319,16 +535,15 @@ struct HomeHeroView: View {
 
 private struct HeroTopBar: View {
     var body: some View {
-        // Plain translucent pill (no blur) as in the original, to keep
-        // scrolling and pull-to-refresh cheap over the hero image.
+        // Native material keeps the brand mark legible while preserving the
+        // live artwork underneath, instead of using a flat translucent fill.
         HStack(spacing: 9) {
             Image(systemName: "play.fill")
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(.white)
                 .frame(width: 32, height: 32)
                 .background(
-                    LinearGradient(colors: [.vxAccent, Color(red: 0.41, green: 0.46, blue: 0.96)],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing),
+                    Color.vxSocialGradient,
                     in: RoundedRectangle(cornerRadius: 11, style: .continuous))
             Text("VXTUBE")
                 .font(.footnote.weight(.black))
@@ -337,10 +552,13 @@ private struct HeroTopBar: View {
             Circle().fill(Color.vxAccent).frame(width: 5, height: 5)
         }
         .padding(.leading, 7).padding(.trailing, 13).padding(.vertical, 7)
-        .background(Color(red: 0.08, green: 0.10, blue: 0.19).opacity(0.6),
+        .background(.ultraThinMaterial,
                     in: RoundedRectangle(cornerRadius: 17, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 17, style: .continuous)
-            .strokeBorder(.white.opacity(0.16)))
+            .fill(Color.black.opacity(0.12)))
+        .overlay(RoundedRectangle(cornerRadius: 17, style: .continuous)
+            .strokeBorder(.white.opacity(0.22), lineWidth: 0.8))
+        .shadow(color: .black.opacity(0.16), radius: 14, y: 6)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("VXTUBE")
     }
@@ -375,13 +593,19 @@ private struct HeroDetails: View {
                     if playBusy { ProgressView().tint(.white) }
                     else { Label(playLabel, systemImage: "play.fill") }
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.vxAccent)
+                .buttonStyle(.plain)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 17).frame(height: 44)
+                .background(Color.vxSocialGradient, in: Capsule(style: .continuous))
+                .shadow(color: Color.vxAccent.opacity(0.28), radius: 12, y: 5)
                 .disabled(playBusy)
 
-                Button(action: onDetails) { Label("Details", systemImage: "info.circle") }
-                    .buttonStyle(.bordered)
-                    .tint(.white)
+                Button(action: onDetails) { Label("Details", systemImage: "arrow.up.right") }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16).frame(height: 44)
+                    .background(.ultraThinMaterial, in: Capsule(style: .continuous))
+                    .overlay(Capsule().strokeBorder(.white.opacity(0.24), lineWidth: 0.8) )
             }
             .controlSize(.large)
             .buttonBorderShape(.roundedRectangle(radius: 16))

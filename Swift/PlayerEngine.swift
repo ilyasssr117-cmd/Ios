@@ -85,6 +85,7 @@ final class PlayerEngine {
             options: (headers?.isEmpty ?? true) ? nil : ["AVURLAssetHTTPHeaderFieldsKey": headers!]
         )
         let item = AVPlayerItem(asset: asset)
+        item.preferredForwardBufferDuration = 8
         player.replaceCurrentItem(with: item)
 
         try await withThrowingTaskGroup(of: Void.self) { group in
@@ -110,6 +111,7 @@ final class PlayerEngine {
         videoSize = item.presentationSize
         isReady = true
         observeOngoing(item)
+        updateDuration(item.duration)
     }
 
     /// Errors after a successful start (stream dropped, etc.) -> `value.hasError`.
@@ -148,6 +150,19 @@ final class PlayerEngine {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] size in MainActor.assumeIsolated { self?.videoSize = size } }
             .store(in: &itemBag)
+
+        item.publisher(for: \.duration)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] duration in
+                MainActor.assumeIsolated { self?.updateDuration(duration) }
+            }
+            .store(in: &itemBag)
+    }
+
+    private func updateDuration(_ value: CMTime) {
+        let seconds = value.seconds
+        guard seconds.isFinite, seconds > 0 else { return }
+        duration = seconds
     }
 
     // MARK: Controls

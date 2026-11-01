@@ -100,76 +100,120 @@ private final class SearchViewModel {
 struct SearchScreen: View {
     let dependencies: AppDependencies
     let onOpen: (Video, [Video]) -> Void
+    let onClose: () -> Void
     @State private var vm: SearchViewModel
     @State private var selectedModel: ModelRef?
     @State private var selectedAlbum: AlbumRef?
     @Environment(\.horizontalSizeClass) private var sizeClass
 
-    init(dependencies: AppDependencies, onOpen: @escaping (Video, [Video]) -> Void) {
-        self.dependencies = dependencies; self.onOpen = onOpen
+    init(dependencies: AppDependencies, onOpen: @escaping (Video, [Video]) -> Void,
+         onClose: @escaping () -> Void = {}) {
+        self.dependencies = dependencies
+        self.onOpen = onOpen
+        self.onClose = onClose
         _vm = State(initialValue: SearchViewModel(repository: dependencies.repository))
     }
 
-    private var columns: [GridItem] { Array(repeating: GridItem(.flexible(), spacing: 12), count: sizeClass == .regular ? 3 : 2) }
+    private var columns: [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: 12), count: sizeClass == .regular ? 3 : 2)
+    }
 
     var body: some View {
         @Bindable var vm = vm
-        VStack(spacing: 12) {
-            HStack(spacing: 10) {
-                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                TextField("Videos, models, albums", text: $vm.query)
-                    .textInputAutocapitalization(.never).autocorrectionDisabled()
-                    .submitLabel(.search).onSubmit { Task { await vm.search() } }
-                if !vm.query.isEmpty {
-                    Button { vm.query = ""; Task { await vm.search() } } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary) }
-                }
-            }
-            .padding(.horizontal, 14).frame(height: 48)
-            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
-            .padding(.horizontal, 16)
-
-            Picker("Search type", selection: $vm.scope) {
-                ForEach(SearchScope.allCases) { Text($0.rawValue).tag($0) }
-            }
-            .pickerStyle(.segmented).padding(.horizontal, 16)
-            .onChange(of: vm.scope) { _, _ in Task { await vm.search() } }
-
-            if vm.scope == .videos {
-                HStack {
-                    Text("Sort by").font(.caption).foregroundStyle(.secondary)
-                    Picker("Sort", selection: $vm.sortBy) {
-                        Text("Relevant").tag("relevant")
-                        Text("Most viewed").tag("views")
-                        Text("Newest").tag("latest")
-                        Text("Top rated").tag("rating")
-                    }.pickerStyle(.menu).onChange(of: vm.sortBy) { _, _ in Task { await vm.search() } }
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 18) {
+                HStack(alignment: .center) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Search")
+                            .font(.system(.largeTitle, design: .rounded).weight(.bold))
+                            .tracking(-1.0)
+                        Text("Find videos, people and albums")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
                     Spacer()
-                }.padding(.horizontal, 16)
-            }
-
-            if vm.isLoading && vm.videos.isEmpty && vm.people.isEmpty {
-                ProgressView("Searching…").frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let error = vm.error {
-                ContentUnavailableView("Search failed", systemImage: "wifi.exclamationmark", description: Text(error))
-            } else if vm.query.trimmingCharacters(in: .whitespaces).isEmpty {
-                if vm.scope == .albums {
-                    AllAlbumsCatalogView(dependencies: dependencies) { selectedAlbum = $0 }
-                } else {
-                    recentSearches
+                    Button(action: onClose) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .bold))
+                            .frame(width: 38, height: 38)
+                            .background(.regularMaterial, in: Circle())
+                            .overlay(Circle().strokeBorder(.white.opacity(0.18)))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Close search")
                 }
-            } else {
-                results
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 18, weight: .semibold))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.secondary)
+                    TextField("Search videos, models, albums", text: $vm.query)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .submitLabel(.search)
+                        .onSubmit { Task { await vm.search() } }
+                    if !vm.query.isEmpty {
+                        Button { vm.query = ""; Task { await vm.search() } } label: {
+                            Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .frame(height: 56)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(.white.opacity(0.18)))
+                .shadow(color: .black.opacity(0.05), radius: 16, y: 6)
+                .padding(.horizontal, 16)
+
+                SearchScopePicker(selection: $vm.scope)
+                    .padding(.horizontal, 16)
+                    .onChange(of: vm.scope) { _, _ in Task { await vm.search() } }
+
+                if vm.scope == .videos {
+                    HStack {
+                        Label("Sort", systemImage: "arrow.up.arrow.down")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Picker("Sort", selection: $vm.sortBy) {
+                            Text("Relevant").tag("relevant")
+                            Text("Most viewed").tag("views")
+                            Text("Newest").tag("latest")
+                            Text("Top rated").tag("rating")
+                        }
+                        .pickerStyle(.menu)
+                        .tint(.vxAccent)
+                        .onChange(of: vm.sortBy) { _, _ in Task { await vm.search() } }
+                    }
+                    .padding(.horizontal, 20)
+                }
+
+                Group {
+                    if vm.isLoading && vm.videos.isEmpty && vm.people.isEmpty {
+                        ProgressView().frame(maxWidth: .infinity).padding(.top, 100)
+                    } else if let error = vm.error {
+                        ModernEmptyState(icon: "wifi.exclamationmark", title: "Search failed", message: error)
+                            .padding(.top, 60)
+                    } else if vm.query.trimmingCharacters(in: .whitespaces).isEmpty {
+                        if vm.scope == .albums {
+                            AllAlbumsCatalogView(dependencies: dependencies) { selectedAlbum = $0 }
+                        } else {
+                            recentSearches
+                        }
+                    } else {
+                        results
+                    }
+                }
             }
+            .padding(.bottom, 110)
         }
-        .padding(.top, 12)
-        .background(Color(.systemBackground))
-        .navigationTitle("Search").navigationBarTitleDisplayMode(.inline)
-        .sheet(item: $selectedModel) { model in
-            ModelBrowserView(model: model, dependencies: dependencies, onOpen: onOpen)
-        }
-        .sheet(item: $selectedAlbum) { album in
-            AlbumBrowserView(album: album, dependencies: dependencies)
-        }
+        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $selectedModel) { model in ModelBrowserView(model: model, dependencies: dependencies, onOpen: onOpen) }
+        .sheet(item: $selectedAlbum) { album in AlbumBrowserView(album: album, dependencies: dependencies) }
         .task(id: vm.query) {
             guard !vm.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
             try? await Task.sleep(for: .milliseconds(420))
@@ -180,63 +224,132 @@ struct SearchScreen: View {
 
     @ViewBuilder private var recentSearches: some View {
         let history = SearchHistory.shared.items
-        if history.isEmpty {
-            ContentUnavailableView("Search videos and models", systemImage: "magnifyingglass", description: Text("Your recent searches will appear here."))
-        } else {
-            List {
-                Section("Recent searches") {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Recent searches").font(.headline)
+                Spacer()
+                if !history.isEmpty {
+                    Button("Clear") { SearchHistory.shared.clear() }
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.red)
+                }
+            }
+            if history.isEmpty {
+                ModernEmptyState(icon: "clock", title: "No recent searches", message: "Your searches will appear here.")
+            } else {
+                VStack(spacing: 8) {
                     ForEach(history, id: \.self) { item in
                         Button { vm.query = item; Task { await vm.search() } } label: {
-                            Label(item, systemImage: "clock.arrow.circlepath").foregroundStyle(.primary)
+                            HStack(spacing: 12) {
+                                Image(systemName: "clock.arrow.circlepath")
+                                    .symbolRenderingMode(.hierarchical)
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 34, height: 34)
+                                    .background(.thinMaterial, in: Circle())
+                                Text(item).font(.body.weight(.medium)).foregroundStyle(.primary)
+                                Spacer()
+                                Image(systemName: "arrow.up.left").font(.caption.weight(.bold)).foregroundStyle(.tertiary)
+                            }
+                            .padding(.horizontal, 14).frame(minHeight: 58)
+                            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
                         }
-                        .swipeActions { Button(role: .destructive) { SearchHistory.shared.remove(item) } label: { Label("Delete", systemImage: "trash") } }
+                        .buttonStyle(.plain)
+                        .contextMenu { Button(role: .destructive) { SearchHistory.shared.remove(item) } label: { Label("Delete", systemImage: "trash") } }
                     }
-                    Button("Clear search history", role: .destructive) { SearchHistory.shared.clear() }
                 }
-            }.listStyle(.insetGrouped)
+            }
         }
+        .padding(.horizontal, 16)
     }
 
     @ViewBuilder private var results: some View {
         switch vm.scope {
         case .videos:
-            if vm.videos.isEmpty { ContentUnavailableView.search(text: vm.query) }
-            else {
-                ScrollView {
-                    LazyVGrid(columns: columns, spacing: 16) {
-                        ForEach(vm.videos) { video in VideoCard(video: video) { onOpen(video, vm.videos) } }
-                    }.padding(16)
+            if vm.videos.isEmpty {
+                ModernEmptyState(icon: "magnifyingglass", title: "No videos found", message: "Try a different search.")
+            } else {
+                LazyVGrid(columns: columns, spacing: 16) {
+                    ForEach(vm.videos) { video in VideoCard(video: video) { onOpen(video, vm.videos) } }
                 }
+                .padding(.horizontal, 16)
             }
         case .people:
-            if vm.people.models.isEmpty { ContentUnavailableView("No models found", systemImage: "person.crop.circle", description: Text("Try another name.")) }
-            else {
-                List(vm.people.models) { model in
-                    Button { selectedModel = model } label: {
-                        HStack(spacing: 12) {
-                            ModelAvatar(name: model.name, imageURL: model.imageURL, pageURL: model.url, size: 48)
-                            Text(model.name).foregroundStyle(.primary)
-                            Spacer()
-                            Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+            if vm.people.models.isEmpty {
+                ModernEmptyState(icon: "person.crop.circle", title: "No models found", message: "Try another name.")
+            } else {
+                LazyVStack(spacing: 10) {
+                    ForEach(vm.people.models) { model in
+                        Button { selectedModel = model } label: {
+                            HStack(spacing: 13) {
+                                ModelAvatar(name: model.name, imageURL: model.imageURL, pageURL: model.url, size: 50)
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(model.name).font(.headline).foregroundStyle(.primary)
+                                    Text("Open profile").font(.caption).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(.tertiary)
+                            }
+                            .padding(12)
+                            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                         }
+                        .buttonStyle(.plain)
                     }
-                }.listStyle(.plain)
+                }
+                .padding(.horizontal, 16)
             }
         case .albums:
-            if vm.people.albums.isEmpty { ContentUnavailableView("No albums found", systemImage: "photo.on.rectangle", description: Text("Try another search.")) }
-            else {
-                List(vm.people.albums) { album in
-                    Button { selectedAlbum = album } label: {
-                        HStack(spacing: 12) {
-                            HeaderImage(url: URL(string: album.thumbnailURL ?? "") ?? URL(fileURLWithPath: "/"), maxPixel: 240)
-                                .frame(width: 76, height: 64).clipShape(RoundedRectangle(cornerRadius: 10))
-                            VStack(alignment: .leading) { Text(album.title).foregroundStyle(.primary); if let model = album.modelName { Text(model).font(.caption).foregroundStyle(.secondary) } }
-                            Spacer(); Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+            if vm.people.albums.isEmpty {
+                ModernEmptyState(icon: "photo.on.rectangle.angled", title: "No albums found", message: "Try another search.")
+            } else {
+                LazyVStack(spacing: 10) {
+                    ForEach(vm.people.albums) { album in
+                        Button { selectedAlbum = album } label: {
+                            HStack(spacing: 13) {
+                                HeaderImage(url: URL(string: album.thumbnailURL ?? "") ?? URL(fileURLWithPath: "/"), maxPixel: 240)
+                                    .frame(width: 84, height: 70)
+                                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(album.title).font(.headline).foregroundStyle(.primary).lineLimit(2)
+                                    if let model = album.modelName { Text(model).font(.caption).foregroundStyle(.secondary) }
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(.tertiary)
+                            }
+                            .padding(10)
+                            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                         }
+                        .buttonStyle(.plain)
                     }
-                }.listStyle(.plain)
+                }
+                .padding(.horizontal, 16)
             }
         }
+    }
+}
+
+private struct SearchScopePicker: View {
+    @Binding var selection: SearchScope
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(SearchScope.allCases) { scope in
+                let selected = selection == scope
+                Button {
+                    Haptics.play(.selection)
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) { selection = scope }
+                } label: {
+                    Text(scope.rawValue)
+                        .font(.subheadline.weight(selected ? .semibold : .medium))
+                        .foregroundStyle(selected ? .primary : .secondary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
+                        .background(selected ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(Color.clear), in: Capsule(style: .continuous))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(4)
+        .background(.thinMaterial, in: Capsule(style: .continuous))
+        .overlay(Capsule(style: .continuous).strokeBorder(.white.opacity(0.18)))
     }
 }
 
@@ -264,33 +377,46 @@ struct LibraryView: View {
     @State private var selectedSavedAlbum: SavedPhotoAlbum?
     @State private var offlinePhotoStore = OfflinePhotoAlbumsStore.shared
 
+    private var accent: Color { .vxAccent }
+
     var body: some View {
-        VStack(spacing: 12) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(LibrarySegment.allCases, id: \.self) { value in
-                        Button { segment = value } label: {
-                            Text(value.rawValue.capitalized)
-                                .font(.subheadline.weight(.semibold))
-                                .padding(.horizontal, 14).padding(.vertical, 8)
-                                .background(segment == value ? Color.vxAccent : Color(.secondarySystemBackground), in: Capsule())
-                                .foregroundStyle(segment == value ? .white : .primary)
-                        }.buttonStyle(.plain)
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 22) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Library")
+                        .font(.system(.largeTitle, design: .rounded).weight(.bold))
+                        .tracking(-1.0)
+                    Text("Your saved videos, history and offline content")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+
+                LibrarySectionPicker(selection: $segment)
+                    .padding(.horizontal, 16)
+
+                Group {
+                    switch segment {
+                    case .favorites:
+                        videoList(favorites.items, emptyTitle: "No favorites yet", emptyMessage: "Save videos you want to watch later.")
+                    case .history:
+                        historyList
+                    case .downloads:
+                        downloadsList
+                    case .models:
+                        modelsList
+                    case .albums:
+                        albumsList
                     }
-                }.padding(.horizontal, 16)
-            }.padding(.top, 12)
-            Group {
-                switch segment {
-                case .favorites: videoList(favorites.items, emptyTitle: "No favorites yet", emptyMessage: "Save a video with the star button.")
-                case .history: historyList
-                case .downloads: downloadsList
-                case .models: modelsList
-                case .albums: albumsList
                 }
             }
+            .padding(.bottom, 110)
         }
-        .background(Color(.systemBackground))
-        .navigationTitle("Library").navigationBarTitleDisplayMode(.inline)
+        .scrollClipDisabled()
+        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear { if let request { segment = request.segment } }
         .onChange(of: request?.token) { _, _ in if let request { segment = request.segment } }
         .sheet(item: $selectedModel) { model in ModelBrowserView(model: model, dependencies: dependencies, onOpen: onOpen) }
@@ -298,127 +424,293 @@ struct LibraryView: View {
     }
 
     @ViewBuilder private var historyList: some View {
-        let entries = history.items.filter { entry in
-            return switch historyFilter {
-            case .all: true
-            case .continuing: playbackProgress.resumePosition(for: entry.video.id) != nil
-            case .watched: playbackProgress.isCompleted(entry.video.id)
+        VStack(alignment: .leading, spacing: 14) {
+            HistoryFilterPicker(selection: $historyFilter)
+                .padding(.horizontal, 16)
+            let entries = history.items.filter { entry in
+                switch historyFilter {
+                case .all: true
+                case .continuing: playbackProgress.resumePosition(for: entry.video.id) != nil
+                case .watched: playbackProgress.isCompleted(entry.video.id)
+                }
             }
-        }
-        VStack(spacing: 10) {
-            Picker("History filter", selection: $historyFilter) {
-                ForEach(HistoryLibraryFilter.allCases) { filter in Text(filter.rawValue).tag(filter) }
-            }.pickerStyle(.segmented).padding(.horizontal, 16).padding(.top, 10)
             videoList(
                 entries.map(\.video),
                 emptyTitle: history.items.isEmpty ? "Nothing played yet" : (historyFilter == .watched ? "No watched videos" : "Nothing to continue"),
-                emptyMessage: history.items.isEmpty ? "Videos you play will appear here." : "Try another history filter to see your videos."
+                emptyMessage: history.items.isEmpty ? "Videos you play will appear here." : "Try another filter to see more."
             )
         }
     }
 
     @ViewBuilder private func videoList(_ videos: [Video], emptyTitle: String, emptyMessage: String) -> some View {
         if videos.isEmpty {
-            ContentUnavailableView(emptyTitle, systemImage: "video.slash", description: Text(emptyMessage))
-                .overlay(alignment: .bottom) { Button("Browse videos", action: onBrowse).buttonStyle(.borderedProminent).padding(.bottom, 35) }
+            ModernEmptyState(icon: "play.slash", title: emptyTitle, message: emptyMessage, actionTitle: "Browse videos", action: onBrowse)
+                .padding(.top, 44)
         } else {
-            ScrollView {
-                LazyVStack(spacing: 14) {
-                    ForEach(videos) { video in
-                        VideoCard(video: video) { onOpen(video, videos) }
-                    }
-                }.padding(16)
+            LazyVStack(spacing: 14) {
+                ForEach(videos) { video in
+                    LibraryVideoRow(video: video) { onOpen(video, videos) }
+                }
             }
+            .padding(.horizontal, 16)
         }
     }
 
     @ViewBuilder private var downloadsList: some View {
         let list = downloads.items.values.sorted { $0.video.title.localizedCaseInsensitiveCompare($1.video.title) == .orderedAscending }
         if list.isEmpty {
-            ContentUnavailableView("No downloads", systemImage: "arrow.down.circle", description: Text("Downloaded videos will be available offline."))
-                .overlay(alignment: .bottom) { Button("Browse videos", action: onBrowse).buttonStyle(.borderedProminent).padding(.bottom, 35) }
+            ModernEmptyState(icon: "arrow.down.circle", title: "No downloads", message: "Downloaded videos will be available offline.", actionTitle: "Browse videos", action: onBrowse)
+                .padding(.top, 44)
         } else {
-            List {
+            LazyVStack(spacing: 12) {
                 ForEach(list) { item in
-                    HStack(spacing: 12) {
-                        ArtworkView(video: item.video)
-                            .frame(width: 104, height: 72).clipShape(RoundedRectangle(cornerRadius: 10))
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(item.video.title).font(.subheadline.weight(.semibold)).lineLimit(2)
-                            switch item.status {
-                            case .done: Label("Available offline", systemImage: "checkmark.circle.fill").font(.caption).foregroundStyle(.green)
-                            case .downloading: ProgressView(value: item.progress ?? 0).tint(.vxAccent)
-                            case .queued: Text("Waiting to download").font(.caption).foregroundStyle(.secondary)
-                            case .paused: Text("Paused").font(.caption).foregroundStyle(.secondary)
-                            case .failed: Text("Download failed").font(.caption).foregroundStyle(.red)
-                            }
-                        }
-                        Spacer(minLength: 0)
-                        if item.status == .done {
-                            Button { onOpen(item.video, list.map(\.video)) } label: { Image(systemName: "play.fill") }
-                        } else if item.status == .paused || item.status == .failed {
-                            Button { downloads.resume(item.id) } label: { Image(systemName: "arrow.clockwise") }
-                        } else if item.status == .downloading || item.status == .queued {
-                            Button { Task { await downloads.pause(item.id) } } label: { Image(systemName: "pause.fill") }
-                        }
-                    }
+                    LibraryDownloadRow(item: item,
+                                       onPlay: { onOpen(item.video, list.map(\.video)) },
+                                       onResume: { downloads.resume(item.id) },
+                                       onPause: { Task { await downloads.pause(item.id) } })
                     .swipeActions {
                         Button(role: .destructive) { Task { await downloads.remove(item.id) } } label: { Label("Delete", systemImage: "trash") }
                     }
                 }
-            }.listStyle(.plain)
+            }
+            .padding(.horizontal, 16)
         }
     }
 
     @ViewBuilder private var modelsList: some View {
         let models = ModelFavoritesStore.shared.items
         if models.isEmpty {
-            ContentUnavailableView("No saved models", systemImage: "person.crop.circle", description: Text("Save a model profile to find it here."))
+            ModernEmptyState(icon: "person.crop.circle", title: "No saved models", message: "Save a model profile to find it here.")
+                .padding(.top, 44)
         } else {
-            List(models) { model in
-                HStack(spacing: 12) {
+            LazyVStack(spacing: 10) {
+                ForEach(models) { model in
                     Button { selectedModel = model } label: {
-                        HStack(spacing: 12) {
-                            ModelAvatar(name: model.name, imageURL: model.imageURL, pageURL: model.url, size: 44)
-                            Text(model.name).foregroundStyle(.primary)
+                        HStack(spacing: 13) {
+                            ModelAvatar(name: model.name, imageURL: model.imageURL, pageURL: model.url, size: 48)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(model.name).font(.headline).foregroundStyle(.primary)
+                                Text("Saved profile").font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(.tertiary)
                         }
+                        .padding(14)
+                        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(.white.opacity(0.18)))
                     }
-                    Spacer()
-                    Button { ModelFavoritesStore.shared.toggle(model) } label: { Image(systemName: "star.fill").foregroundStyle(.yellow) }
+                    .buttonStyle(.plain)
+                    .contextMenu {
+                        Button(role: .destructive) { ModelFavoritesStore.shared.toggle(model) } label: { Label("Remove favorite", systemImage: "star.slash") }
+                    }
                 }
-            }.listStyle(.plain)
+            }
+            .padding(.horizontal, 16)
         }
     }
 
     @ViewBuilder private var albumsList: some View {
         let albums = offlinePhotoStore.albums
         if albums.isEmpty {
-            ContentUnavailableView("No saved albums yet", systemImage: "photo.on.rectangle", description: Text("Open an album and choose Download all to keep its photos offline."))
+            ModernEmptyState(icon: "photo.on.rectangle.angled", title: "No saved albums", message: "Download an album to keep its photos offline.")
+                .padding(.top, 44)
         } else {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    Text("\(albums.count) albums · \(offlinePhotoStore.totalPhotos) photos")
-                        .font(.caption).foregroundStyle(.secondary)
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                        ForEach(albums) { album in
-                            Button { selectedSavedAlbum = album } label: {
-                                VStack(alignment: .leading, spacing: 7) {
-                                    SavedAlbumCover(album: album, store: offlinePhotoStore)
-                                        .frame(height: 170).clipShape(RoundedRectangle(cornerRadius: 12))
-                                    Text(album.title).font(.subheadline.weight(.semibold)).foregroundStyle(.primary).lineLimit(2)
-                                    Text("\(album.photos.count) photos" + (album.modelName.map { " · \($0)" } ?? ""))
-                                        .font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            }.buttonStyle(.plain)
-                            .contextMenu {
-                                Button("Delete offline album", role: .destructive) { offlinePhotoStore.removeAlbum(album.id) }
+            VStack(alignment: .leading, spacing: 14) {
+                Text("\(albums.count) albums · \(offlinePhotoStore.totalPhotos) photos")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 2)
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 14) {
+                    ForEach(albums) { album in
+                        Button { selectedSavedAlbum = album } label: {
+                            VStack(alignment: .leading, spacing: 8) {
+                                SavedAlbumCover(album: album, store: offlinePhotoStore)
+                                    .frame(height: 155)
+                                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                                Text(album.title).font(.subheadline.weight(.semibold)).foregroundStyle(.primary).lineLimit(2)
+                                Text("\(album.photos.count) photos" + (album.modelName.map { " · \($0)" } ?? ""))
+                                    .font(.caption).foregroundStyle(.secondary).lineLimit(1)
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                        .buttonStyle(.plain)
+                        .contextMenu { Button("Delete offline album", role: .destructive) { offlinePhotoStore.removeAlbum(album.id) } }
                     }
-                }.padding(16)
+                }
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+}
+
+private struct LibrarySectionPicker: View {
+    @Binding var selection: LibrarySegment
+    private let icons: [LibrarySegment: String] = [
+        .favorites: "star.fill", .history: "clock", .downloads: "arrow.down.circle.fill", .models: "person.2.fill", .albums: "photo.stack.fill"
+    ]
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(LibrarySegment.allCases, id: \.self) { value in
+                    let selected = selection == value
+                    Button {
+                        Haptics.play(.selection)
+                        withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) { selection = value }
+                    } label: {
+                        Label(value.rawValue.capitalized, systemImage: icons[value] ?? "circle")
+                            .font(.subheadline.weight(selected ? .semibold : .medium))
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(selected ? Color.primary : Color.secondary)
+                            .padding(.horizontal, 14)
+                            .frame(height: 42)
+                            .background(selected ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(.thinMaterial), in: Capsule(style: .continuous))
+                            .overlay(Capsule(style: .continuous).strokeBorder(selected ? Color.white.opacity(0.28) : Color.primary.opacity(0.06), lineWidth: 0.8))
+                            .shadow(color: .black.opacity(selected ? 0.08 : 0), radius: 12, y: 4)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.vertical, 2)
+        }
+    }
+}
+
+private struct HistoryFilterPicker: View {
+    @Binding var selection: HistoryLibraryFilter
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(HistoryLibraryFilter.allCases) { value in
+                let selected = selection == value
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) { selection = value }
+                } label: {
+                    Text(value.rawValue)
+                        .font(.caption.weight(selected ? .semibold : .medium))
+                        .foregroundStyle(selected ? .primary : .secondary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 36)
+                        .background(selected ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(Color.clear), in: Capsule(style: .continuous))
+                }
+                .buttonStyle(.plain)
             }
         }
+        .padding(4)
+        .background(.thinMaterial, in: Capsule(style: .continuous))
+        .overlay(Capsule(style: .continuous).strokeBorder(.white.opacity(0.18)))
+    }
+}
+
+private struct LibraryVideoRow: View {
+    let video: Video
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 13) {
+                ArtworkView(video: video)
+                    .frame(width: 128, height: 82)
+                    .overlay(alignment: .bottomTrailing) {
+                        if !video.duration.isEmpty {
+                            Text(video.duration)
+                                .font(.system(size: 10, weight: .bold, design: .rounded).monospacedDigit())
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 7).padding(.vertical, 4)
+                                .background(.black.opacity(0.68), in: Capsule())
+                                .padding(6)
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(video.title).font(.system(.subheadline, design: .rounded).weight(.semibold)).foregroundStyle(.primary).lineLimit(2)
+                    HStack(spacing: 8) {
+                        if !video.likes.isEmpty { Label(video.likes, systemImage: "hand.thumbsup.fill").foregroundStyle(.tint) }
+                        if !video.views.isEmpty { Label(video.views, systemImage: "eye") }
+                    }
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(.tertiary)
+            }
+            .padding(10)
+            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 19, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 19, style: .continuous).strokeBorder(.white.opacity(0.16)))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct LibraryDownloadRow: View {
+    let item: DownloadItem
+    let onPlay: () -> Void
+    let onResume: () -> Void
+    let onPause: () -> Void
+    var body: some View {
+        HStack(spacing: 12) {
+            ArtworkView(video: item.video)
+                .frame(width: 118, height: 76)
+                .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+            VStack(alignment: .leading, spacing: 5) {
+                Text(item.video.title).font(.subheadline.weight(.semibold)).lineLimit(2)
+                switch item.status {
+                case .done: Label("Available offline", systemImage: "checkmark.circle.fill").font(.caption).foregroundStyle(.green)
+                case .downloading: ProgressView(value: item.progress ?? 0).tint(.vxAccent)
+                case .queued: Text("Waiting to download").font(.caption).foregroundStyle(.secondary)
+                case .paused: Text("Paused").font(.caption).foregroundStyle(.secondary)
+                case .failed: Text("Download failed").font(.caption).foregroundStyle(.red)
+                }
+            }
+            Spacer(minLength: 0)
+            Button {
+                switch item.status {
+                case .done: onPlay()
+                case .paused, .failed: onResume()
+                case .downloading, .queued: onPause()
+                }
+            } label: {
+                Image(systemName: item.status == .done ? "play.fill" : (item.status == .downloading || item.status == .queued ? "pause.fill" : "arrow.clockwise"))
+                    .font(.subheadline.weight(.bold))
+                    .frame(width: 38, height: 38)
+                    .background(.regularMaterial, in: Circle())
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(10)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 19, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 19, style: .continuous).strokeBorder(.white.opacity(0.16)))
+    }
+}
+
+private struct ModernEmptyState: View {
+    let icon: String
+    let title: String
+    let message: String
+    var actionTitle: String? = nil
+    var action: (() -> Void)? = nil
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 28, weight: .medium))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.secondary)
+                .frame(width: 58, height: 58)
+                .background(.thinMaterial, in: Circle())
+            Text(title).font(.title3.weight(.semibold))
+            Text(message).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center).padding(.horizontal, 28)
+            if let actionTitle, let action {
+                Button(actionTitle, action: action)
+                    .buttonStyle(.borderedProminent)
+                    .tint(.vxAccent)
+                    .controlSize(.large)
+                    .clipShape(Capsule(style: .continuous))
+                    .padding(.top, 6)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 34)
     }
 }
 
@@ -450,37 +742,70 @@ struct SettingsView: View {
     @State private var settings = AppSettings.shared
 
     var body: some View {
-        Form {
-            Section("Appearance") {
-                Picker("Theme", selection: Binding(get: { settings.themeMode }, set: settings.setThemeMode)) {
-                    ForEach(AppThemeMode.allCases) { mode in Text(mode.title).tag(mode) }
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 26) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Settings")
+                        .font(.system(.largeTitle, design: .rounded).weight(.bold))
+                        .tracking(-1.0)
+                    Text("Personalize playback, appearance and storage")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+
+                SettingsGroup(title: "Appearance", icon: "paintbrush.fill") {
+                    SettingsRow(icon: "circle.lefthalf.filled", title: "Theme") {
+                        Picker("Theme", selection: Binding(get: { settings.themeMode }, set: settings.setThemeMode)) {
+                            ForEach(AppThemeMode.allCases) { mode in Text(mode.title).tag(mode) }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(.vxAccent)
+                    }
+                }
+
+                SettingsGroup(title: "Playback", icon: "play.circle.fill") {
+                    SettingsToggleRow(icon: "forward.end.fill", title: "Autoplay next video", isOn: Binding(get: { settings.autoplayNext }, set: settings.setAutoplayNext))
+                    SettingsDivider()
+                    SettingsToggleRow(icon: "speaker.wave.2.fill", title: "Preview sound", isOn: Binding(get: { settings.previewSound }, set: settings.setPreviewSound))
+                    SettingsDivider()
+                    SettingsToggleRow(icon: "iphone.radiowaves.left.and.right", title: "Haptic feedback", isOn: Binding(get: { settings.haptics }, set: settings.setHaptics))
+                    SettingsDivider()
+                    SettingsRow(icon: "sparkles.tv.fill", title: "Preferred quality") {
+                        Picker("Quality", selection: Binding(get: { settings.preferredQuality }, set: settings.setPreferredQuality)) {
+                            Text("Auto").tag(0); Text("360p").tag(360); Text("480p").tag(480); Text("720p").tag(720); Text("1080p").tag(1080); Text("2160p / 4K").tag(2160)
+                        }
+                        .pickerStyle(.menu)
+                        .tint(.vxAccent)
+                    }
+                }
+
+                SettingsGroup(title: "Storage & privacy", icon: "externaldrive.fill") {
+                    SettingsValueRow(icon: "arrow.down.circle.fill", title: "Completed downloads", value: "\(downloads.doneCount)")
+                    SettingsDivider()
+                    SettingsValueRow(icon: "photo.stack.fill", title: "Offline photo albums", value: "\(offlinePhotos.albums.count) · \(offlinePhotos.totalPhotos)")
+                    SettingsDivider()
+                    SettingsActionRow(title: "Delete all downloads", role: .destructive) { showingClearDownloads = true }.disabled(downloads.items.isEmpty)
+                    SettingsDivider()
+                    SettingsActionRow(title: "Delete offline photo albums", role: .destructive) { showingClearOfflinePhotos = true }.disabled(offlinePhotos.albums.isEmpty)
+                    SettingsDivider()
+                    SettingsActionRow(title: "Clear watch history", role: .destructive) { showingClearHistory = true }.disabled(history.items.isEmpty)
+                    SettingsDivider()
+                    SettingsActionRow(title: "Clear search history", role: .destructive) { SearchHistory.shared.clear() }
+                }
+
+                SettingsGroup(title: "About", icon: "info.circle.fill") {
+                    SettingsValueRow(icon: "play.rectangle.fill", title: "App", value: "VXTube")
+                    SettingsDivider()
+                    SettingsValueRow(icon: "swift", title: "Native platform", value: "SwiftUI · AVPlayer")
                 }
             }
-            Section("Playback & feedback") {
-                Toggle("Autoplay next video", isOn: Binding(get: { settings.autoplayNext }, set: settings.setAutoplayNext))
-                Toggle("Preview sound", isOn: Binding(get: { settings.previewSound }, set: settings.setPreviewSound))
-                Toggle("Haptic feedback", isOn: Binding(get: { settings.haptics }, set: settings.setHaptics))
-                Picker("Preferred quality", selection: Binding(get: { settings.preferredQuality }, set: settings.setPreferredQuality)) {
-                    Text("Auto").tag(0); Text("360p").tag(360); Text("480p").tag(480); Text("720p").tag(720); Text("1080p").tag(1080); Text("2160p / 4K").tag(2160)
-                }
-            }
-            Section("Storage & privacy") {
-                LabeledContent("Completed downloads", value: "\(downloads.doneCount)")
-                LabeledContent("Offline photo albums", value: "\(offlinePhotos.albums.count) · \(offlinePhotos.totalPhotos) photos")
-                Button("Delete all downloads", role: .destructive) { showingClearDownloads = true }
-                    .disabled(downloads.items.isEmpty)
-                Button("Delete offline photo albums", role: .destructive) { showingClearOfflinePhotos = true }
-                    .disabled(offlinePhotos.albums.isEmpty)
-                Button("Clear watch history", role: .destructive) { showingClearHistory = true }
-                    .disabled(history.items.isEmpty)
-                Button("Clear search history", role: .destructive) { SearchHistory.shared.clear() }
-            }
-            Section("About") {
-                LabeledContent("App", value: "VXTube")
-                LabeledContent("Native platform", value: "SwiftUI · AVPlayer")
-            }
+            .padding(.bottom, 110)
         }
-        .navigationTitle("Settings").navigationBarTitleDisplayMode(.inline)
+        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("Clear watch history?", isPresented: $showingClearHistory, titleVisibility: .visible) {
             Button("Clear history", role: .destructive) { history.clear(); progress.clearAll() }
         } message: { Text("This removes your watch history and saved resume positions.") }
@@ -491,6 +816,103 @@ struct SettingsView: View {
             Button("Delete all photo albums", role: .destructive) { offlinePhotos.clearAll() }
         } message: { Text("All locally saved album photos will be removed from this device. Photos already exported to the iOS Photos library will remain there.") }
     }
+}
+
+private struct SettingsGroup<Content: View>: View {
+    let title: String
+    let icon: String
+    @ViewBuilder let content: Content
+    var body: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            Label(title.uppercased(), systemImage: icon)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 5)
+            VStack(spacing: 0) { content }
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .strokeBorder(LinearGradient(colors: [.white.opacity(0.32), .white.opacity(0.07)], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 0.9)
+                }
+                .shadow(color: .black.opacity(0.045), radius: 16, y: 7)
+        }
+        .padding(.horizontal, 16)
+    }
+}
+
+private struct SettingsRow<Accessory: View>: View {
+    let icon: String
+    let title: String
+    @ViewBuilder let accessory: Accessory
+    var body: some View {
+        HStack(spacing: 13) {
+            SettingsIcon(systemName: icon)
+            Text(title).font(.body.weight(.medium))
+            Spacer(minLength: 10)
+            accessory
+        }
+        .padding(.horizontal, 15).frame(minHeight: 58)
+    }
+}
+
+private struct SettingsToggleRow: View {
+    let icon: String
+    let title: String
+    @Binding var isOn: Bool
+    var body: some View {
+        HStack(spacing: 13) {
+            SettingsIcon(systemName: icon)
+            Text(title).font(.body.weight(.medium))
+            Spacer()
+            Toggle("", isOn: $isOn).labelsHidden().tint(.vxAccent)
+        }
+        .padding(.horizontal, 15).frame(minHeight: 58)
+    }
+}
+
+private struct SettingsValueRow: View {
+    let icon: String
+    let title: String
+    let value: String
+    var body: some View {
+        HStack(spacing: 13) {
+            SettingsIcon(systemName: icon)
+            Text(title).font(.body.weight(.medium))
+            Spacer(minLength: 10)
+            Text(value).font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+        }
+        .padding(.horizontal, 15).frame(minHeight: 58)
+    }
+}
+
+private struct SettingsActionRow: View {
+    let title: String
+    let role: ButtonRole?
+    let action: () -> Void
+    var body: some View {
+        Button(role: role, action: action) {
+            HStack { Text(title).font(.body.weight(.medium)); Spacer() }
+                .padding(.horizontal, 15).frame(minHeight: 58)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(role == .destructive ? .red : .primary)
+    }
+}
+
+private struct SettingsIcon: View {
+    let systemName: String
+    var body: some View {
+        Image(systemName: systemName)
+            .font(.system(size: 16, weight: .semibold))
+            .symbolRenderingMode(.hierarchical)
+            .foregroundStyle(.tint)
+            .frame(width: 34, height: 34)
+            .background(Color.vxAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+}
+
+private struct SettingsDivider: View {
+    var body: some View { Divider().padding(.leading, 62) }
 }
 
 // MARK: - Model & album browsing
@@ -613,10 +1035,14 @@ struct ModelBrowserView: View {
                     }
                 }.padding(.horizontal, 16).padding(.top, 10)
 
-                Picker("Model content", selection: $selectedTab) {
-                    Text("Videos").tag(0)
-                    Text("Photos").tag(1)
-                }.pickerStyle(.segmented).padding(.horizontal, 16)
+                HStack(spacing: 6) {
+                    modelScopeButton("Videos", symbol: "play.rectangle.fill", tag: 0)
+                    modelScopeButton("Photos", symbol: "photo.stack.fill", tag: 1)
+                }
+                .padding(4)
+                .background(.thinMaterial, in: Capsule(style: .continuous))
+                .overlay(Capsule(style: .continuous).strokeBorder(.white.opacity(0.18), lineWidth: 0.8))
+                .padding(.horizontal, 16)
 
                 if selectedTab == 0 { videosContent } else { albumsContent }
             }
@@ -628,6 +1054,25 @@ struct ModelBrowserView: View {
                 await loadAlbums()
             }
         }
+    }
+
+    private func modelScopeButton(_ title: String, symbol: String, tag: Int) -> some View {
+        let selected = selectedTab == tag
+        return Button {
+            Haptics.play(.selection)
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) { selectedTab = tag }
+        } label: {
+            Label(title, systemImage: symbol)
+                .font(.subheadline.weight(selected ? .semibold : .medium))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(selected ? Color.primary : Color.secondary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 40)
+                .background(selected ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(Color.clear),
+                            in: Capsule(style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     @ViewBuilder private var videosContent: some View {
@@ -642,7 +1087,7 @@ struct ModelBrowserView: View {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 14) {
                     ForEach(videos) { video in
-                        VideoCard(video: video) { onOpen(video, videos) }
+                        VideoCard(video: video) { openVideo(video) }
                             .onAppear { if video.id == videos.last?.id, hasMoreVideos { Task { await loadVideos() } } }
                     }
                 }.padding(16)
@@ -688,6 +1133,15 @@ struct ModelBrowserView: View {
                     }.padding()
                 }
             }
+        }
+    }
+
+    private func openVideo(_ video: Video) {
+        let queue = videos
+        dismiss()
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(280))
+            onOpen(video, queue)
         }
     }
 

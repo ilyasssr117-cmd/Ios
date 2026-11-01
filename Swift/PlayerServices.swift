@@ -250,10 +250,10 @@ struct DefaultPlaybackLauncher: PlaybackLauncher {
         MiniPlayer.shared.close()
         do {
             let local = downloads.localPath(for: video.id)?.path
-            let supplied = video.streamURL.trimmingCharacters(in: .whitespaces)
-            let hasDirect = !supplied.isEmpty && supplied != (video.previewURL?.absoluteString ?? "")
             var playable = video
-            if local == nil, source == nil, !hasDirect {
+            if local == nil, source == nil {
+                // Match Flutter's launchPlayer: do not trust a listing-card
+                // stream/preview. Resolve the actual media URL from its detail page.
                 var bare = video
                 bare.streamURL = ""
                 playable = try await resolver.resolveForPlayback(bare, refresh: false)

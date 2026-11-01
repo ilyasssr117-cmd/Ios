@@ -50,21 +50,21 @@ struct VideoMetaLine: View {
 
     var body: some View {
         let items = items
-        HStack(spacing: 0) {
-            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
-                if index > 0 { Text("•").padding(.horizontal, 6).opacity(0.5) }
+        HStack(spacing: 10) {
+            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
                 HStack(spacing: 4) {
                     if let symbol = item.systemImage {
                         Image(systemName: symbol)
-                            .imageScale(.small)
+                            .font(.system(size: 10, weight: .semibold))
+                            .symbolRenderingMode(.hierarchical)
                             .foregroundStyle(item.tinted ? AnyShapeStyle(Color.vxAccent) : AnyShapeStyle(.secondary))
                     }
-                    Text(item.text).lineLimit(1)
+                    Text(item.text).lineLimit(1).minimumScaleFactor(0.85)
                 }
             }
         }
-        .font(.caption)
-        .foregroundStyle(onDark ? AnyShapeStyle(Color.white.opacity(0.85)) : AnyShapeStyle(.secondary))
+        .font(.system(size: 11, weight: .medium, design: .rounded))
+        .foregroundStyle(onDark ? AnyShapeStyle(Color.white.opacity(0.86)) : AnyShapeStyle(.secondary))
     }
 }
 
@@ -97,49 +97,68 @@ struct VideoCard: View {
         let completed = progress.isCompleted(video.id)
         let fraction = completed ? nil : progress.fraction(for: video.id)
 
-        VStack(alignment: .leading, spacing: Gaps.sm) {
-            Color.clear
-                .aspectRatio(16 / 9, contentMode: .fit)
-                .overlay { ArtworkView(video: video) }
-                .overlay { if preview.activeID == video.id { PlayerLayerView(player: preview.player).transition(.opacity) } }
-                .overlay(alignment: .topLeading) {
-                    if completed {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 22, height: 22)
-                            .background(Color.vxAccent, in: Circle())
-                            .padding(6)
-                    }
-                }
-                .overlay(alignment: .bottomTrailing) {
-                    if !video.duration.isEmpty {
-                        Text(video.duration)
-                            .font(.caption2.weight(.semibold).monospacedDigit())
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 6).padding(.vertical, 2)
-                            .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                            .padding(.trailing, 6).padding(.bottom, fraction == nil ? 6 : 9)
-                    }
-                }
-                .overlay(alignment: .bottom) { if let fraction { ProgressBar(fraction: fraction) } }
-                .overlay(alignment: .topTrailing) { FavoriteButton(video: video) }
-                .clipShape(RoundedRectangle(cornerRadius: Radii.card, style: .continuous))
-                .animation(.easeOut(duration: 0.2), value: preview.activeID)
-
-            Text(video.title)
-                .font(.subheadline)
-                .lineLimit(2, reservesSpace: true)
-            VideoMetaLine(video: video, showDate: true)
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
+        Button {
             preview.stopNow()
             onTap()
+        } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                Color.clear
+                    .aspectRatio(16 / 9, contentMode: .fit)
+                    .overlay { ArtworkView(video: video) }
+                    .overlay {
+                        if preview.activeID == video.id {
+                            PlayerLayerView(player: preview.player).transition(.opacity)
+                        }
+                    }
+                    .overlay(alignment: .topLeading) {
+                        if completed {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 23, height: 23)
+                                .background(Color.vxAccent, in: Circle())
+                                .padding(7)
+                        }
+                    }
+                    .overlay(alignment: .bottomTrailing) {
+                        if !video.duration.isEmpty {
+                            Text(video.duration)
+                                .font(.system(size: 10, weight: .bold, design: .rounded).monospacedDigit())
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 7).padding(.vertical, 4)
+                                .background(.black.opacity(0.72), in: Capsule())
+                                .padding(7)
+                        }
+                    }
+                    .overlay(alignment: .bottom) { if let fraction { ProgressBar(fraction: fraction) } }
+                    .clipShape(RoundedRectangle(cornerRadius: Radii.card, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: Radii.card, style: .continuous)
+                            .strokeBorder(Color.primary.opacity(0.055), lineWidth: 0.8)
+                    }
+                    .animation(.easeOut(duration: 0.2), value: preview.activeID)
+
+                Text(video.title)
+                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(2, reservesSpace: true)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                VideoMetaLine(video: video, showDuration: false, showDate: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .contentShape(Rectangle())
         }
-        .onLongPressGesture(minimumDuration: 0.35) { preview.request(video) }
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isButton)
+        .buttonStyle(.plain)
+        .overlay(alignment: .topTrailing) {
+            FavoriteButton(video: video).padding(7)
+        }
+        .simultaneousGesture(
+            LongPressGesture(minimumDuration: 0.35)
+                .onEnded { _ in preview.request(video) }
+        )
+        .accessibilityElement(children: .contain)
         .accessibilityLabel([video.title, completed ? "watched" : nil,
                              video.duration.isEmpty ? nil : video.duration,
                              video.likes.isEmpty ? nil : "\(video.likes) liked",
@@ -164,7 +183,9 @@ private struct FavoriteButton: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(active ? Color.vxAccent : Color.white)
                 .frame(width: 30, height: 30)
-                .background(.black.opacity(active ? 0.8 : 0.45), in: Circle())
+                .background(.ultraThinMaterial, in: Circle())
+                .overlay(Circle().fill(Color.black.opacity(active ? 0.36 : 0.20)))
+                .overlay(Circle().strokeBorder(.white.opacity(0.24), lineWidth: 0.8))
                 .symbolEffect(.bounce, value: active)
                 .frame(width: 44, height: 44)
                 .contentShape(Rectangle())
@@ -191,7 +212,12 @@ struct CategoryBar: View {
                         Text(category)
                             .font(.subheadline.weight(.medium))
                             .padding(.horizontal, 14).padding(.vertical, 7)
-                            .background(isSelected ? Color.vxAccent : Color(.secondarySystemFill), in: Capsule())
+                            .background {
+                                Capsule(style: .continuous)
+                                    .fill(isSelected ? AnyShapeStyle(Color.vxAccent) : AnyShapeStyle(.ultraThinMaterial))
+                            }
+                            .overlay(Capsule(style: .continuous)
+                                .strokeBorder(Color.primary.opacity(isSelected ? 0.04 : 0.08), lineWidth: 0.8))
                             .foregroundStyle(isSelected ? Color.white : Color.primary)
                     }
                     .buttonStyle(.plain)

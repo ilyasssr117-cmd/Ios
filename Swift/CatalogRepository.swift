@@ -295,9 +295,7 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         for anchor in try document.select("a.grid-item[href], #albumGallery .item a[href], .album-view .item a[href], .photo-holder .item a[href]").array() {
             guard let href = try? anchor.attr("href"), let full = absolute(href, relativeTo: url),
                   let image = try? anchor.select("img").first() else { continue }
-            let dataSrc = (try? image.attr("data-src")) ?? ""
-            let plainSrc = (try? image.attr("src")) ?? ""
-            let thumbRaw = dataSrc.isEmpty ? plainSrc : dataSrc
+            let thumbRaw = (try? image?.attr("data-src")) ?? (try? image?.attr("src")) ?? ""
             let thumb = absolute(thumbRaw, relativeTo: url) ?? full
             let path = full.path.isEmpty ? full.absoluteString : full.path
             let id = firstMatch(#"/sources/(.+?)/?$"#, in: path) ?? path
@@ -309,7 +307,8 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
     func resolveForPlayback(_ video: Video, refresh: Bool = false) async throws -> Video {
         try ensureConfigured()
         let supplied = video.streamURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !supplied.isEmpty && supplied != (video.previewURL?.absoluteString ?? "") { return video }
+        if let suppliedURL = URL(string: supplied), isPlayable(suppliedURL), !isPreviewURL(suppliedURL),
+           supplied != (video.previewURL?.absoluteString ?? "") { return video }
         if !refresh {
             if let cached = cachedPlayback(for: video.id), Date().timeIntervalSince(cached.0) < 8 * 60 { return cached.1 }
         }
@@ -341,6 +340,29 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         resolved.qualities = qualities.count > 1 ? qualities : []
         storePlayback(resolved, for: video.id)
         return resolved
+    }
+
+    func playbackHeaders(pageURL: URL?, streamURL: URL, refresh: Bool) async -> [String: String] {
+        // Prime the same first-party/detail-page cookie jar before AVFoundation requests media.
+        _ = try? await loadHTML(config.baseURL, fresh: refresh)
+        if let pageURL {
+            _ = try? await loadHTML(pageURL, fresh: refresh, referer: config.baseURL)
+        }
+        var headers: [String: String] = [
+            "User-Agent": config.userAgent,
+            "Accept": "*/*",
+            "Accept-Language": "en-US,en;q=0.9"
+        ]
+        if let pageURL {
+            headers["Referer"] = pageURL.absoluteString
+            headers["Origin"] = pageURL.originString
+        }
+        let cookieStorage = session.configuration.httpCookieStorage ?? HTTPCookieStorage.shared
+        if let cookies = cookieStorage.cookies(for: streamURL), !cookies.isEmpty,
+           let cookie = HTTPCookie.requestHeaderFields(with: cookies)["Cookie"] {
+            headers["Cookie"] = cookie
+        }
+        return headers
     }
 
     func clearPlaybackCaches() {
@@ -420,14 +442,13 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         guard !classes.contains("album"), !classes.contains("gallery") else { return nil }
 
         let image = try card.select(config.imageSelector).first()
-        var imageRaw = ""
-        for name in ["data-src", "data-original", "data-webp", "data-lazy-src", "src"] {
-            let value: String = (try? image?.attr(name)) ?? ""
-            if !value.isEmpty { imageRaw = value; break }
-        }
-        if imageRaw.isEmpty {
-            imageRaw = (try? card.select("video[poster]").first()?.attr("poster")) ?? ""
-        }
+        let imageRaw = (try? image?.attr("data-src"))
+            ?? (try? image?.attr("data-original"))
+            ?? (try? image?.attr("data-webp"))
+            ?? (try? image?.attr("data-lazy-src"))
+            ?? (try? image?.attr("src"))
+            ?? (try? card.select("video[poster]").first()?.attr("poster"))
+            ?? ""
         let thumbnail = absolute(imageRaw, relativeTo: pageURL)
         let anchorText = cleanText((try? anchor?.text()) ?? "")
         let cardText = cleanText(try card.text())
@@ -440,39 +461,61 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
             anchorText,
             cardText
         ]
-        let title = titleCandidates.map(cleanText).first(where: { !$0.isEmpty }) ?? ""
+        var title = titleCandidates.map(cleanText).first(where: { !$0.isEmpty }) ?? ""
+        title = cleanVideoTitle(title)
+        if title.isEmpty { title = cleanVideoTitle(anchorText) }
+        if title.isEmpty { title = cleanVideoTitle(cardText) }
         guard !title.isEmpty else { return nil }
 
-        let durationIcon = cleanText((try? card.select(config.durationIconSelector).first()?.text()) ?? "")
-        let durationText = cleanText((try? card.select(config.durationSelector).first()?.text()) ?? "")
-        let duration = firstMatch(#"\b\d{1,2}:\d{2}(?::\d{2})?\b"#, in: durationIcon.isEmpty ? durationText : durationIcon)
-            ?? firstMatch(#"\b\d{1,2}:\d{2}(?::\d{2})?\b"#, in: "\(anchorText) \(cardText)")
-            ?? (try? card.attr("data-duration")) ?? ""
+        let durationIcon = iconParentText(in: card, selector: config.durationIconSelector)
+        let durationText = selectedMetadataText(
+            in: card, selector: config.durationSelector,
+            attributes: ["data-duration", "content", "title", "aria-label"]
+        )
+        let durationPattern = #"\b(\d{1,2}:\d{2}(?::\d{2})?)\b"#
+        let duration = firstMatch(durationPattern, in: durationIcon)
+            ?? firstMatch(durationPattern, in: durationText)
+            ?? firstMatch(durationPattern, in: "\(anchorText) \(cardText)")
+            ?? cleanText((try? card.attr("data-duration")) ?? "")
 
-        let viewsIcon = cleanText((try? card.select(config.viewsIconSelector).first()?.text()) ?? "")
-        let viewsText = cleanText((try? card.select(config.viewsSelector).first()?.text()) ?? (try? card.attr("data-views")) ?? "")
-        let views = firstMatch(#"[\d,.]+\s*[KkMm]?"#, in: viewsIcon.isEmpty ? viewsText : viewsIcon)
-            ?? firstMatch(#"[\d,.]+\s*[KkMm]?\s*views?"#, in: "\(anchorText) \(cardText)") ?? ""
+        let viewsIcon = iconParentText(in: card, selector: config.viewsIconSelector)
+        let viewsText = selectedMetadataText(
+            in: card, selector: config.viewsSelector,
+            attributes: ["data-views", "content", "title", "aria-label"]
+        ) + " " + cleanText((try? card.attr("data-views")) ?? "")
+        let viewsPattern = #"(\d[\d,.]*\s*[KkMmBb]?)\s*views?\b"#
+        let iconViews = normalizeViews(viewsIcon)
+        let cardViews = firstMatch(viewsPattern, in: "\(anchorText) \(cardText)")
+            .map(normalizeViews) ?? ""
+        let viewsRaw = firstMatch(#"(\d[\d,.]*\s*[KkMmBb]?)"#, in: viewsText)
+        let nodeViews = normalizeViews(viewsRaw ?? viewsText)
+        let views = !iconViews.isEmpty ? iconViews
+            : (!cardViews.isEmpty ? cardViews : nodeViews)
 
-        let likesText = cleanText((try? card.select(config.likesSelector).first()?.text())
-            ?? (try? card.attr("data-rating")) ?? (try? card.attr("data-likes")) ?? "")
-        let likes = firstMatch(#"[\d]{1,3}\s*%"#, in: "\(anchorText) \(cardText) \(likesText)")
-            ?? firstMatch(#"[\d]{1,3}"#, in: likesText).map { "\($0)%" } ?? ""
-        let date = cleanText((try? card.select(config.dateIconSelector).first()?.text()) ?? "")
+        let likesText = selectedMetadataText(
+            in: card, selector: config.likesSelector,
+            attributes: ["data-rating", "data-likes", "content", "title", "aria-label"]
+        ) + " " + cleanText((try? card.attr("data-rating")) ?? "")
+          + " " + cleanText((try? card.attr("data-likes")) ?? "")
+        let likesRaw = firstMatch(#"^\s*(\d{1,3})\s*%"#, in: anchorText)
+            ?? firstMatch(#"^\s*(\d{1,3})\s*%"#, in: cardText)
+            ?? firstMatch(#"(\d{1,3})\s*%"#, in: likesText)
+            ?? firstMatch(#"^\s*(\d{1,3})(?:\.0+)?\s*$"#, in: likesText)
+        let likes = likesRaw.map { "\($0)%" } ?? ""
+        let date = iconParentText(in: card, selector: config.dateIconSelector)
 
         let dataID = ((try? card.attr("data-id")) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        var queryPart = ""
-        if let query = videoPage.query, !query.isEmpty { queryPart = "?" + query }
-        let pageKey: String = (videoPage.host ?? "") + videoPage.path + queryPart
-        let id = dataID.isEmpty ? pageKey : dataID
+        let id = dataID.isEmpty ? "\(videoPage.host ?? "")\(videoPage.path)\(videoPage.query.isEmpty ? "" : "?\(videoPage.query)")" : dataID
         let directCandidates = [
             (try? card.attr("data-video-url")) ?? "",
             (try? card.attr("data-stream")) ?? "",
             (try? card.select("video source[src]").first()?.attr("src")) ?? "",
             (try? card.select("video[src]").first()?.attr("src")) ?? ""
         ]
-        let directRaw = directCandidates.first(where: { !$0.isEmpty }) ?? ""
-        let directStream = absolute(directRaw, relativeTo: pageURL)?.absoluteString ?? ""
+        let directURL = directCandidates
+            .compactMap { absolute($0, relativeTo: pageURL) }
+            .first(where: { isPlayable($0) && !isPreviewURL($0) })
+        let directStream = directURL?.absoluteString ?? ""
         let previewCandidates = [
             (try? image?.attr("data-preview")) ?? "",
             (try? card.select("[data-preview]").first()?.attr("data-preview")) ?? ""
@@ -504,36 +547,84 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         return output
     }
 
-    private struct StreamCandidate { let url: URL; let quality: Int; let rank: Int }
+    private struct StreamCandidate {
+        let url: URL
+        let quality: Int
+        let rank: Int
+        let order: Int
+        let preview: Bool
+        var score: Int { max(quality, 1) }
+    }
 
     private func extractStreams(_ html: String, document: Document, baseURL: URL) -> [StreamCandidate] {
         var output: [StreamCandidate] = []
         var seen = Set<String>()
         func add(_ raw: String?, rank: Int, label: String = "") {
-            guard let raw, let url = absolute(unescape(raw), relativeTo: baseURL), isPlayable(url), seen.insert(url.absoluteString).inserted else { return }
-            let q = Int(firstMatch(#"(\d{3,4})\s*p"#, in: label.lowercased()) ?? "") ?? (label.lowercased().contains("4k") ? 2160 : 0)
-            output.append(StreamCandidate(url: url, quality: q, rank: rank))
+            guard let raw else { return }
+            let cleaned = unescape(raw).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !cleaned.isEmpty, !cleaned.hasPrefix("function/"),
+                  let url = absolute(cleaned, relativeTo: baseURL), isPlayable(url),
+                  seen.insert(url.absoluteString).inserted else { return }
+            let qualityText = label.isEmpty ? url.absoluteString : label
+            let lowerQuality = qualityText.lowercased()
+            let parsedQuality = Int(firstMatch(#"(\d{3,4})\s*p"#, in: lowerQuality) ?? "")
+            let quality = parsedQuality
+                ?? (lowerQuality.contains("4k") || lowerQuality.contains("2160") ? 2160 :
+                    lowerQuality.contains("fhd") || lowerQuality.contains("1080") ? 1080 :
+                    lowerQuality.contains("hd") || lowerQuality.contains("720") ? 720 :
+                    lowerQuality.contains("480") ? 480 : lowerQuality.contains("sd") ? 360 : 0)
+            output.append(StreamCandidate(url: url, quality: quality, rank: rank,
+                                          order: output.count, preview: isPreviewURL(url)))
         }
+
+        // The source's explicit video_url variables are the most reliable full streams.
+        let urlPattern = #"(video_(?:alt_)?url\d*)\s*[:=]\s*[\"']([^\"']+)[\"']"#
+        let labelPattern = #"(video_(?:alt_)?url\d*)_text\s*[:=]\s*[\"']([^\"']*)[\"']"#
+        var labels: [String: String] = [:]
+        if let regex = try? NSRegularExpression(pattern: labelPattern, options: [.caseInsensitive]) {
+            for match in regex.matches(in: html, range: NSRange(html.startIndex..., in: html)) {
+                guard let keyRange = Range(match.range(at: 1), in: html),
+                      let valueRange = Range(match.range(at: 2), in: html) else { continue }
+                labels[String(html[keyRange]).lowercased()] = String(html[valueRange])
+            }
+        }
+        if let regex = try? NSRegularExpression(pattern: urlPattern, options: [.caseInsensitive]) {
+            for match in regex.matches(in: html, range: NSRange(html.startIndex..., in: html)) {
+                guard let keyRange = Range(match.range(at: 1), in: html),
+                      let valueRange = Range(match.range(at: 2), in: html) else { continue }
+                let key = String(html[keyRange]).lowercased()
+                add(String(html[valueRange]), rank: 0, label: labels[key] ?? "")
+            }
+        }
+
         if let sources = try? document.select("video source[src], video[src]").array() {
             for source in sources {
-                let src = (try? source.attr("src"))
-                let label = (try? source.attr("label")) ?? (try? source.attr("title")) ?? (try? source.attr("res")) ?? ""
-                add(src, rank: 1, label: label)
+                let label = (try? source.attr("label")) ?? (try? source.attr("title"))
+                    ?? (try? source.attr("res")) ?? (try? source.attr("size"))
+                    ?? (try? source.attr("data-res")) ?? ""
+                add(try? source.attr("src"), rank: 1, label: label)
             }
         }
         if let meta = try? document.select("meta[property=og:video], meta[property=og:video:url], meta[property=og:video:secure_url], meta[name=twitter:player:stream]").array() {
             for node in meta { add(try? node.attr("content"), rank: 2) }
         }
-        let patterns: [(String, Int)] = [
-            (config.streamURLPattern, 0),
-            (#"(?:video_(?:alt_)?url\d*|file|src)\s*[:=]\s*[\"']([^\"']+)[\"']"#, 1),
-            (#"\"contentUrl\"\s*:\s*\"([^\"]+)\""#, 3),
-            (#"(https?://[^\s\"'<>\\]+?\.(?:mp4|m3u8|webm)(?:\?[^\s\"'<>\\]*)?)"#, 4)
-        ]
-        for (pattern, rank) in patterns {
-            for value in allMatches(pattern, in: html) { add(value, rank: rank, label: value) }
+        for value in allMatches(#""contentUrl"\s*:\s*"([^"]+)""#, in: html) {
+            add(value, rank: 3)
         }
-        return output.sorted { a, b in a.rank == b.rank ? a.quality > b.quality : a.rank < b.rank }
+        for value in allMatches(config.streamURLPattern, in: html) {
+            add(value, rank: 4, label: value)
+        }
+        let plain = html.replacingOccurrences(of: #"\/"#, with: "/")
+        for value in allMatches(#"(https?://[^\s\"'<>\\]+?\.(?:mp4|m3u8|m4v|mov)(?:\?[^\s\"'<>\\]*)?)"#, in: plain) {
+            add(value, rank: 5, label: value)
+        }
+
+        return output.filter { !$0.preview }.sorted { a, b in
+            if a.preview != b.preview { return !a.preview }
+            if a.score != b.score { return a.score > b.score }
+            if a.rank != b.rank { return a.rank < b.rank }
+            return a.order < b.order
+        }
     }
 
     // MARK: Networking & URL helpers
@@ -598,9 +689,87 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
     }
 
     private func isPlayable(_ url: URL) -> Bool {
-        let lower = url.absoluteString.lowercased()
-        guard ![".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".css", ".js", ".vtt", ".srt"].contains(where: { lower.contains($0) }) else { return false }
-        return [".mp4", ".m3u8", ".webm", ".mkv", ".mov", ".m4v", ".mpd", "/get_file/"].contains(where: { lower.contains($0) })
+        let path = url.path.lowercased()
+        let query = url.query?.lowercased() ?? ""
+        let nonMedia = #"\.(?:jpe?g|png|gif|webp|svg|ico|css|js|json|vtt|srt|woff2?|ttf|html?)(?:$|[?#])"#
+        if path.range(of: nonMedia, options: .regularExpression) != nil { return false }
+        let resource = path + (query.isEmpty ? "" : "?\(query)")
+        return [".mp4", ".m3u8", ".mov", ".m4v", "/get_file/"]
+            .contains(where: { resource.contains($0) })
+    }
+
+    /// Read a metadata node's text and common data attributes. Some source
+    /// templates place the value in `data-*`, `title`, or `aria-label` instead
+    /// of a text node, so support those forms as a fallback.
+    private func selectedMetadataText(in element: Element, selector: String, attributes: [String]) -> String {
+        guard !selector.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let selected = try? element.select(selector),
+              let node = selected.first() else { return "" }
+        var values: [String] = []
+        if let text = try? node.text(), !cleanText(text).isEmpty { values.append(cleanText(text)) }
+        for attribute in attributes {
+            if let value = try? node.attr(attribute), !cleanText(value).isEmpty {
+                values.append(cleanText(value))
+            }
+        }
+        if let parent = try? node.parent(), let text = try? parent.text(), !cleanText(text).isEmpty {
+            values.append(cleanText(text))
+        }
+        return cleanText(values.joined(separator: " "))
+    }
+
+    private func iconParentText(in element: Element, selector: String) -> String {
+        guard !selector.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let selected = try? element.select(selector),
+              let icon = selected.first() else { return "" }
+        if let parent = try? icon.parent(),
+           let text = try? parent.text(), !cleanText(text).isEmpty {
+            return cleanText(text)
+        }
+        return cleanText((try? icon.text()) ?? "")
+    }
+
+    private func normalizeViews(_ raw: String) -> String {
+        let text = cleanText(raw)
+            .replacingOccurrences(of: "views?", with: "", options: .regularExpression.union(.caseInsensitive))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty,
+              let regex = try? NSRegularExpression(pattern: #"^(\d[\d.,\s\x{00a0}]*?)\s*([KkMmBb])?$"#),
+              let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+              let numberRange = Range(match.range(at: 1), in: text) else { return "" }
+
+        let numberText = String(text[numberRange]).replacingOccurrences(of: #"[\s\x{00a0}]"#, with: "", options: .regularExpression)
+        let suffix = match.range(at: 2).location == NSNotFound ? nil : Range(match.range(at: 2), in: text).map { String(text[$0]).uppercased() }
+        func compact(_ value: Double) -> String {
+            let formatted = value >= 100 ? String(Int(value.rounded())) : String(format: "%.1f", value)
+            return formatted.replacingOccurrences(of: #"\.0$"#, with: "", options: .regularExpression)
+        }
+        if let suffix {
+            guard let value = Double(numberText.replacingOccurrences(of: ",", with: ".")) else { return "" }
+            return "\(compact(value))\(suffix) views"
+        }
+        let digits = numberText.replacingOccurrences(of: #"[^0-9]"#, with: "", options: .regularExpression)
+        guard let count = Double(digits) else { return "" }
+        if count >= 1_000_000_000 { return "\(compact(count / 1_000_000_000))B views" }
+        if count >= 1_000_000 { return "\(compact(count / 1_000_000))M views" }
+        if count >= 1_000 { return "\(compact(count / 1_000))K views" }
+        return count == 1 ? "1 view" : "\(Int(count)) views"
+    }
+
+    private func cleanVideoTitle(_ raw: String) -> String {
+        var text = cleanText(raw)
+        text = text.replacingOccurrences(of: #"^\s*\d{1,3}\s*%\s*"#, with: "", options: .regularExpression)
+        text = text.replacingOccurrences(of: #"\b\d{1,2}:\d{2}(?::\d{2})?\b"#, with: "", options: .regularExpression)
+        text = text.replacingOccurrences(of: #"[\d,.]+\s*[KkMmBb]?\s*views?\b"#, with: "", options: [.regularExpression, .caseInsensitive])
+        text = text.replacingOccurrences(of: #"\b\d+\s+(?:second|minute|hour|day|week|month|year)s?(?:\s+ago)?\b"#, with: "", options: [.regularExpression, .caseInsensitive])
+        return cleanText(text)
+    }
+
+    private func isPreviewURL(_ url: URL) -> Bool {
+        // Test the resource path, not signed query strings that may contain
+        // unrelated words such as `thumbnail` in a token parameter.
+        url.path.range(of: #"preview|trailer|teaser|sprite|screenshot|thumb"#,
+                       options: .regularExpression.union(.caseInsensitive)) != nil
     }
 
     private func cleanText(_ text: String) -> String {
@@ -619,20 +788,26 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         text.replacingOccurrences(of: "\\/", with: "/")
             .replacingOccurrences(of: "\\u0026", with: "&")
             .replacingOccurrences(of: "\\u003d", with: "=")
+            .replacingOccurrences(of: "\\u002f", with: "/")
+            .replacingOccurrences(of: "\\u003a", with: ":")
+            .replacingOccurrences(of: "\\u003f", with: "?")
+            .replacingOccurrences(of: "\\u002b", with: "+")
             .replacingOccurrences(of: "&amp;", with: "&")
     }
 
     private func firstMatch(_ pattern: String, in text: String) -> String? {
         guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive, .dotMatchesLineSeparators]),
-              let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
-              match.numberOfRanges > 1, let range = Range(match.range(at: 1), in: text) else { return nil }
+              let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) else { return nil }
+        let capture = match.numberOfRanges > 1 && match.range(at: 1).location != NSNotFound ? 1 : 0
+        guard let range = Range(match.range(at: capture), in: text) else { return nil }
         return String(text[range])
     }
 
     private func allMatches(_ pattern: String, in text: String) -> [String] {
         guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive, .dotMatchesLineSeparators]) else { return [] }
-        return regex.matches(in: text, range: NSRange(text.startIndex..., in: text)).compactMap {
-            guard $0.numberOfRanges > 1, let range = Range($0.range(at: 1), in: text) else { return nil }
+        return regex.matches(in: text, range: NSRange(text.startIndex..., in: text)).compactMap { match in
+            let capture = match.numberOfRanges > 1 && match.range(at: 1).location != NSNotFound ? 1 : 0
+            guard let range = Range(match.range(at: capture), in: text) else { return nil }
             return String(text[range])
         }
     }
@@ -647,25 +822,8 @@ struct NativeStreamResolver: StreamResolver {
     }
 
     func resolveSource(streamURL: URL, pageURL: String?, refresh: Bool, preserveURL: Bool) async throws -> PlaybackSource {
-        var headers: [String: String] = [
-            "User-Agent": CatalogSourceConfiguration.userAgent,
-            "Accept": "*/*"
-        ]
-        if let pageURL, let page = URL(string: pageURL), ["http", "https"].contains(page.scheme?.lowercased() ?? "") {
-            headers["Referer"] = page.absoluteString
-            headers["Origin"] = page.originString
-        }
-        if let cookies = HTTPCookieStorage.shared.cookies(for: streamURL), !cookies.isEmpty {
-            headers["Cookie"] = HTTPCookie.requestHeaderFields(with: cookies)["Cookie"]
-        }
-        if !preserveURL, refresh {
-            // Let the URLSession cookie store refresh expiring session cookies,
-            // while keeping the signed media URL unchanged.
-            var request = URLRequest(url: streamURL, timeoutInterval: 8)
-            headers.forEach { request.setValue($1, forHTTPHeaderField: $0) }
-            request.httpMethod = "HEAD"
-            _ = try? await URLSession.shared.data(for: request)
-        }
+        let page = pageURL.flatMap(URL.init(string:))
+        let headers = await repository.playbackHeaders(pageURL: page, streamURL: streamURL, refresh: refresh)
         return PlaybackSource(url: streamURL.absoluteString, headers: headers)
     }
 }

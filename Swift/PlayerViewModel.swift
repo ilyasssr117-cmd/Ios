@@ -75,6 +75,7 @@ final class PlayerViewModel {
     @ObservationIgnored private var activeHeaders: [String: String]?
     @ObservationIgnored private var activeIsFile = false
     @ObservationIgnored private var usedKnownSource = false
+    @ObservationIgnored private var triedDetailFallback = false
     @ObservationIgnored private var orientationForced = false
     @ObservationIgnored private var initGeneration = 0
     @ObservationIgnored private var reloadToken = 0
@@ -220,6 +221,14 @@ final class PlayerViewModel {
             if usedKnownSource {
                 usedKnownSource = false
                 Task { await initialize(refreshSource: true) }
+                return
+            }
+            // A card can carry a stale or preview stream URL even though its
+            // detail page exposes the real file. Resolve the detail page once
+            // after the first AVPlayer load failure, instead of stopping here.
+            if !triedDetailFallback, localPath == nil, video.pageURL != nil {
+                triedDetailFallback = true
+                await initialize(refreshSource: true)
                 return
             }
             if reconnecting, autoRetries < Self.maxAutoRetries {
@@ -535,6 +544,7 @@ final class PlayerViewModel {
         autoplayCancelled = false
         video = next
         localPath = downloads.localPath(for: next.id)?.path
+        triedDetailFallback = false
         orientationForced = false
         lastPosition = 0
         autoRetries = 0
