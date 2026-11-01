@@ -49,6 +49,7 @@ jobs:
             -derivedDataPath build/DerivedData \
             SWIFT_ENABLE_EXPLICIT_MODULES=NO \
             SWIFT_ENABLE_BATCH_MODE=NO \
+            SWIFT_COMPILATION_MODE=incremental \
             -jobs 1 \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
