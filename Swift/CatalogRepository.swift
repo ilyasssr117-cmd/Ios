@@ -295,7 +295,9 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         for anchor in try document.select("a.grid-item[href], #albumGallery .item a[href], .album-view .item a[href], .photo-holder .item a[href]").array() {
             guard let href = try? anchor.attr("href"), let full = absolute(href, relativeTo: url),
                   let image = try? anchor.select("img").first() else { continue }
-            let thumbRaw = (try? image?.attr("data-src")) ?? (try? image?.attr("src")) ?? ""
+            let dataSrc = (try? image.attr("data-src")) ?? ""
+            let plainSrc = (try? image.attr("src")) ?? ""
+            let thumbRaw = dataSrc.isEmpty ? plainSrc : dataSrc
             let thumb = absolute(thumbRaw, relativeTo: url) ?? full
             let path = full.path.isEmpty ? full.absoluteString : full.path
             let id = firstMatch(#"/sources/(.+?)/?$"#, in: path) ?? path
@@ -418,13 +420,14 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         guard !classes.contains("album"), !classes.contains("gallery") else { return nil }
 
         let image = try card.select(config.imageSelector).first()
-        let imageRaw = (try? image?.attr("data-src"))
-            ?? (try? image?.attr("data-original"))
-            ?? (try? image?.attr("data-webp"))
-            ?? (try? image?.attr("data-lazy-src"))
-            ?? (try? image?.attr("src"))
-            ?? (try? card.select("video[poster]").first()?.attr("poster"))
-            ?? ""
+        var imageRaw = ""
+        for name in ["data-src", "data-original", "data-webp", "data-lazy-src", "src"] {
+            let value: String = (try? image?.attr(name)) ?? ""
+            if !value.isEmpty { imageRaw = value; break }
+        }
+        if imageRaw.isEmpty {
+            imageRaw = (try? card.select("video[poster]").first()?.attr("poster")) ?? ""
+        }
         let thumbnail = absolute(imageRaw, relativeTo: pageURL)
         let anchorText = cleanText((try? anchor?.text()) ?? "")
         let cardText = cleanText(try card.text())
@@ -458,7 +461,10 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
         let date = cleanText((try? card.select(config.dateIconSelector).first()?.text()) ?? "")
 
         let dataID = ((try? card.attr("data-id")) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        let id = dataID.isEmpty ? "\(videoPage.host ?? "")\(videoPage.path)\(videoPage.query.isEmpty ? "" : "?\(videoPage.query)")" : dataID
+        var queryPart = ""
+        if let query = videoPage.query, !query.isEmpty { queryPart = "?" + query }
+        let pageKey: String = (videoPage.host ?? "") + videoPage.path + queryPart
+        let id = dataID.isEmpty ? pageKey : dataID
         let directCandidates = [
             (try? card.attr("data-video-url")) ?? "",
             (try? card.attr("data-stream")) ?? "",
