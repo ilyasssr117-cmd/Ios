@@ -1085,7 +1085,7 @@ struct ModelBrowserView: View {
         if videos.isEmpty && isLoadingVideos {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 14) {
-                    ForEach(0..<6, id: .self) { _ in
+                    ForEach(0..<6, id: \.self) { _ in
                         VStack(alignment: .leading, spacing: 8) {
                             RoundedRectangle(cornerRadius: 18, style: .continuous)
                                 .fill(Color.secondary.opacity(0.16))
@@ -1127,7 +1127,7 @@ struct ModelBrowserView: View {
         if albums.isEmpty && isLoadingAlbums {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 16) {
-                    ForEach(0..<6, id: .self) { _ in
+                    ForEach(0..<6, id: \.self) { _ in
                         VStack(alignment: .leading, spacing: 8) {
                             RoundedRectangle(cornerRadius: 18, style: .continuous)
                                 .fill(Color.secondary.opacity(0.16))
