@@ -264,7 +264,10 @@ struct DefaultPlaybackLauncher: PlaybackLauncher {
                         preserveURL: true
                     )
                     if let customHeaders = video.streamHeaders, !customHeaders.isEmpty {
-                        let merged = (resolved.headers ?? [:]).merging(customHeaders) { _, custom in custom }
+                        let fields = customHeaders.reduce(into: [String: String]()) {
+                            $0[$1.name] = $1.value
+                        }
+                        let merged = (resolved.headers ?? [:]).merging(fields) { _, custom in custom }
                         resolved = PlaybackSource(url: resolved.url, headers: merged)
                     }
                     preparedSource = resolved
