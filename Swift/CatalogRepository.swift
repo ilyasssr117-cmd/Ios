@@ -245,9 +245,12 @@ final class HtmlScraperVideoRepository: VideoRepository, @unchecked Sendable {
             return ModelPageResult(videos: [], profile: nil)
         }
         let decoded = parseJSONVideos(payload, baseURL: url)
-        let list = decoded.isEmpty
-            ? try await parseVideos(at: url, selector: config.cardSelector)
-            : decoded
+        let list: [Video]
+        if decoded.isEmpty {
+            list = try await parseVideos(at: url, selector: config.cardSelector)
+        } else {
+            list = decoded
+        }
         let profile = page <= 1 ? (try? await modelProfile(for: model)) : nil
         return ModelPageResult(videos: list, profile: profile)
     }
