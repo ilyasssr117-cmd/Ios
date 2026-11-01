@@ -133,6 +133,7 @@ struct HomeView: View {
                                  onPlay: { vm.playerRoute = $0 })
             }
         }
+        // Search uses a native draggable sheet instead of a rigid full-screen route.
         .sheet(isPresented: $router.isSearchPresented, onDismiss: {
             router.restoreDockSelection()
         }) {
