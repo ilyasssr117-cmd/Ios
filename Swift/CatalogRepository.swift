@@ -83,8 +83,15 @@ struct CatalogSourceConfiguration: Sendable {
     func searchURL(_ query: String, page: Int, sortBy: String?) -> URL {
         var allowed = CharacterSet.urlPathAllowed
         allowed.remove(charactersIn: "/?#%")
-        let encoded = query.addingPercentEncoding(withAllowedCharacters: allowed) ?? query
-        var result = url(path: searchPathTemplate
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let encoded = trimmedQuery.addingPercentEncoding(withAllowedCharacters: allowed) ?? trimmedQuery
+        var template = searchPathTemplate
+        // Match ScraperConfig.searchUri: the first page omits the page segment
+        // when the configured template contains "/{page}/".
+        if page <= 0, let range = template.range(of: "/{page}/") {
+            template.replaceSubrange(range, with: "/")
+        }
+        var result = url(path: template
             .replacingOccurrences(of: "{query}", with: encoded)
             .replacingOccurrences(of: "{page}", with: "\(max(1, page + 1))"))
         if let sortBy, !sortBy.isEmpty, var components = URLComponents(url: result, resolvingAgainstBaseURL: false) {
@@ -97,8 +104,18 @@ struct CatalogSourceConfiguration: Sendable {
     }
 
     func categoryURL(_ category: String, page: Int) -> URL {
-        let slug = category.lowercased().split(whereSeparator: { $0.isWhitespace }).joined(separator: "-")
-        return url(path: categoryPathTemplate
+        let normalized = category.trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: "\\s+", with: "-", options: .regularExpression)
+        let slug = normalized.replacingOccurrences(
+            of: "[^a-z0-9_-]", with: "", options: .regularExpression
+        )
+        var template = categoryPathTemplate
+        // Match ScraperConfig.categoryUri for page one.
+        if page <= 0, let range = template.range(of: "/{page}/") {
+            template.replaceSubrange(range, with: "/")
+        }
+        return url(path: template
             .replacingOccurrences(of: "{slug}", with: String(slug))
             .replacingOccurrences(of: "{page}", with: "\(max(1, page + 1))"))
     }

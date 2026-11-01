@@ -333,8 +333,6 @@ final class DownloadStore {
     private(set) var items: [String: DownloadItem] = [:]
     @ObservationIgnored private var tasks: [String: Task<Void, Never>] = [:]
     @ObservationIgnored private var resolverTasks: [String: Task<Void, Never>] = [:]
-    /// Fired on every persisted change and on progress ticks (drives WidgetSync + the Live Activity).
-    @ObservationIgnored var onChange: (@MainActor () -> Void)?
     private let repository: VideoRepository?
     private let resolver: StreamResolver?
     private let defaults: UserDefaults
@@ -448,7 +446,6 @@ final class DownloadStore {
             Task { @MainActor in
                 guard let self, self.items[id]?.status == .downloading else { return }
                 self.items[id]?.progress = fraction
-                self.onChange?()
             }
         }
         let resolver = self.resolver
@@ -484,7 +481,6 @@ final class DownloadStore {
     }
     private func persist() {
         if let data = try? JSONEncoder().encode(Array(items.values)) { defaults.set(data, forKey: key) }
-        onChange?()
     }
 }
 

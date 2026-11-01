@@ -40,7 +40,6 @@ final class AppRouter {
 struct HomeView: View {
     @State private var vm: HomeViewModel
     @State private var router = AppRouter()
-    @Environment(\.scenePhase) private var scenePhase
     private let deps: AppDependencies
 
     init(dependencies: AppDependencies) {
@@ -102,23 +101,6 @@ struct HomeView: View {
             // Tapping "restore" in the PiP window re-presents the live player.
             PiPCoordinator.shared.onRestore = { session in
                 vm.playerRoute = DefaultPlaybackLauncher.route(adopting: session)
-            }
-            // Home-screen widget data + download Live Activity (widget_sync.dart / _syncActivity).
-            WidgetSync.shared.start(history: deps.history, progress: deps.progress, downloads: deps.downloads)
-            deps.downloads.onChange = { [downloads = deps.downloads] in
-                WidgetSync.shared.schedule()
-                DownloadLiveActivity.shared.sync(downloads)
-            }
-        }
-        .onChange(of: deps.history.items.count) { WidgetSync.shared.schedule() }
-        .onChange(of: scenePhase) { _, phase in
-            if phase != .active { deps.progress.flush(); WidgetSync.shared.flushNow() }
-        }
-        // watchtube://video?id=… from the widget; history first, then downloads (like Flutter's _open).
-        .onOpenURL { url in
-            guard let video = DeepLink.video(for: url, history: deps.history, downloads: deps.downloads) else { return }
-            Task {
-                if let route = try? await deps.launcher.prepare(video, startAt: nil, queue: []) { vm.playerRoute = route }
             }
         }
         .environment(router)
