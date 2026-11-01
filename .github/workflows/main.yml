@@ -43,13 +43,10 @@ jobs:
           xcodebuild \
             -project VXTube.xcodeproj \
             -scheme VXTube \
-            -jobs 1 \
-            -configuration Debug \
-            SWIFT_OPTIMIZATION_LEVEL=-Onone \
+            -configuration Release \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
             -derivedDataPath build/DerivedData \
-            SWIFT_COMPILATION_MODE=incremental \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             build | tee build/xcodebuild.log
@@ -57,7 +54,7 @@ jobs:
       - name: Package IPA
         run: |
           mkdir -p artifacts Payload
-          APP_PATH="build/DerivedData/Build/Products/Debug-iphoneos/VXTube.app"
+          APP_PATH="build/DerivedData/Build/Products/Release-iphoneos/VXTube.app"
           test -d "$APP_PATH"
           cp -R "$APP_PATH" Payload/
           zip -qry artifacts/VXTube.ipa Payload
